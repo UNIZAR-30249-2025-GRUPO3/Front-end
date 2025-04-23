@@ -1,4 +1,4 @@
-function App() {
+function PrincipalLogin() {
   return (
     <div className="App">
       <header>
@@ -18,4 +18,4 @@ function App() {
   );
 }
 
-export default App;
+export default PrincipalLogin;
