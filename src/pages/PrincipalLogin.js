@@ -43,7 +43,7 @@ function PrincipalLogin() {
   };
 
   return (
-    <div className="App">
+    <div className="App" style={{ background: 'linear-gradient(to bottom, rgb(33, 37, 41), #000842)' }}>
       <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
         <Card style={{ width: '650px', maxWidth: '100vw', padding: '3.5rem' }} className="shadow">
           {/* Logo */}
