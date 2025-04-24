@@ -47,7 +47,7 @@ function PrincipalLogin() {
       <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
         <Card style={{ width: '650px', maxWidth: '100vw', padding: '3.5rem' }} className="shadow">
           {/* Logo */}
-          <div className="d-flex justify-content-center mb-4">
+          <div className="d-flex justify-content-center mb-5">
             <img
               src={logoUnizar}
               alt="Logo Unizar"
@@ -55,7 +55,7 @@ function PrincipalLogin() {
               style={{
                 maxWidth: "100%",
                 height: "auto",
-                maxHeight: "85px"
+                maxHeight: "75px"
               }}
             />
           </div>

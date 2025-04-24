@@ -44,7 +44,7 @@ const Explore = () => {
                                 {/* Opciones de filtrado */}
                                 <Container className="mb-5">
                                     <div className="d-flex justify-content-center">
-                                        <div style={{ width: '80%', maxWidth: '700px' }}>
+                                        <div style={{ width: '100%', maxWidth: '700px' }}>
                                         
                                         {/* Identificador */}
                                         <Form.Group className="mb-3" controlId="formIdentificador">
@@ -70,17 +70,6 @@ const Explore = () => {
                                             </Form.Select>
                                         </Form.Group>
 
-                                        {/* Ocupantes máximos */}
-                                        <Form.Group className="mb-3" controlId="formOcupantes">
-                                            <Form.Label className="text-start d-block">Ocupantes máximos</Form.Label>
-                                            <Form.Control 
-                                            type="number" 
-                                            min="1" 
-                                            placeholder="Introduce nº de ocupantes"
-                                            className="bg-transparent shadow-sm"
-                                            />
-                                        </Form.Group>
-
                                         {/* Planta */}
                                         <Form.Group className="mb-3" controlId="formPlanta">
                                             <Form.Label className="text-start d-block">Planta</Form.Label>
@@ -95,55 +84,66 @@ const Explore = () => {
                                             </Form.Select>
                                         </Form.Group>
 
+                                        {/* Ocupantes máximos */}
+                                        <Form.Group className="mb-3" controlId="formOcupantes">
+                                            <Form.Label className="text-start d-block">Ocupantes máximos</Form.Label>
+                                            <Form.Control 
+                                            type="number" 
+                                            min="1" 
+                                            placeholder="Introduce nº de ocupantes"
+                                            className="bg-transparent shadow-sm"
+                                            />
+                                        </Form.Group>
+
                                         </div>
                                     </div>
                                 </Container>
 
                                 {/* Botones */}
-                                <div className="position-relative d-flex align-items-center w-100 mt-4 px-2">
-                                    {/*Buscar*/}
-                                    <div className="w-100 d-flex justify-content-center">
-                                        <Button 
-                                        variant="outline-light" 
-                                        onClick={() => {}} 
-                                        style={{ 
-                                            backgroundColor: '#000842', 
-                                            color: 'white', 
-                                            borderRadius: '10px', 
-                                            padding: '6px 16px', 
-                                            width: 'auto', 
-                                            minWidth: '130px' 
-                                        }}
-                                        >
-                                        Buscar
-                                        </Button>
-                                    </div>
-                                    
-                                    {/* Reiniciar*/}
-                                    <div className="position-absolute" style={{ right: '8px' }}>
-                                        <Button 
-                                        variant="outline-light" 
-                                        onClick={() => {}} 
-                                        style={{ 
-                                            backgroundColor: '#000842', 
-                                            color: 'white', 
-                                            borderRadius: '10px', 
-                                            padding: '6px 10px', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center', 
-                                            minWidth: '42px' 
-                                        }}
-                                        >
-                                        <FiRefreshCw size={20} />
-                                        </Button>
+                                <div className="w-100 d-flex align-items-center justify-content-center pb-3 mt-auto">
+                                    <div className="position-relative d-flex align-items-center" style={{ width: '90%', maxWidth: '700px' }}>
+                                        {/*Buscar*/}
+                                        <div className="w-100 d-flex justify-content-center">
+                                            <Button 
+                                            variant="outline-light" 
+                                            onClick={() => {}} 
+                                            style={{ 
+                                                backgroundColor: '#000842', 
+                                                color: 'white', 
+                                                borderRadius: '10px', 
+                                                padding: '7px 16px', 
+                                                width: 'auto', 
+                                                minWidth: '120px' 
+                                            }}
+                                            >
+                                            Buscar
+                                            </Button>
+                                        </div>
+                                        
+                                        {/*Reiniciar*/}
+                                        <div className="position-absolute" style={{ right: '0' }}>
+                                            <Button 
+                                            variant="outline-light" 
+                                            onClick={() => {}} 
+                                            style={{ 
+                                                backgroundColor: '#000842', 
+                                                color: 'white', 
+                                                borderRadius: '10px', 
+                                                padding: '7px 10px', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center', 
+                                                minWidth: '42px' 
+                                            }}
+                                            >
+                                            <FiRefreshCw size={20} />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
-
                             </Card.Body>
                         </Card>
                     </Col>
-
                     
                     {/* Mapa */}
                     <Col lg={8} className="p-0 order-1 order-lg-1">
