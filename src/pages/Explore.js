@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "leaflet/dist/leaflet.css";
 import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
 import { MapContainer, TileLayer } from 'react-leaflet';
+import { FiRefreshCw } from "react-icons/fi";
 import CustomNavbar from '../components/CustomNavbar';
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
@@ -33,9 +34,9 @@ const Explore = () => {
                                 <Card.Title 
                                     style={{
                                         fontWeight: 'bold', 
-                                        fontSize: '1.75rem', 
-                                        marginBottom: '1.5rem',
-                                        marginTop: '2rem'
+                                        fontSize: '2.0rem', 
+                                        marginBottom: '2.5rem',
+                                        marginTop: '1rem'
                                     }}>
                                     Buscar espacios
                                 </Card.Title>
@@ -44,54 +45,101 @@ const Explore = () => {
                                 <Container className="mb-5">
                                     <div className="d-flex justify-content-center">
                                         <div style={{ width: '80%', maxWidth: '700px' }}>
+                                        
+                                        {/* Identificador */}
+                                        <Form.Group className="mb-3" controlId="formIdentificador">
+                                            <Form.Label className="text-start d-block">Identificador</Form.Label>
+                                            <Form.Control 
+                                            type="text" 
+                                            placeholder="Introduce el identificador" 
+                                            className="bg-transparent shadow-sm"
+                                            />
+                                        </Form.Group>
+
+                                        {/* Categoría */}
+                                        <Form.Group className="mb-3" controlId="formCategoria">
+                                            <Form.Label className="text-start d-block">Categoría</Form.Label>
                                             <Form.Select 
-                                                aria-label="Selector de categorías de reserva" 
-                                                className="mb-3 shadow-sm"
+                                            aria-label="Selector de categorías de reserva"
+                                            className="bg-transparent shadow-sm"
                                             >
-                                                <option style={{ fontWeight: 'bold' }}>Selecciona categoría</option>
-                                                {categoriaReserva.map((categoria, index) => (
-                                                    <option key={index} value={categoria}>{categoria}</option>
-                                                ))}
+                                            <option style={{ fontWeight: 'bold' }}>Selecciona categoría</option>
+                                            {categoriaReserva.map((categoria, index) => (
+                                                <option key={index} value={categoria}>{categoria}</option>
+                                            ))}
                                             </Form.Select>
+                                        </Form.Group>
+
+                                        {/* Ocupantes máximos */}
+                                        <Form.Group className="mb-3" controlId="formOcupantes">
+                                            <Form.Label className="text-start d-block">Ocupantes máximos</Form.Label>
+                                            <Form.Control 
+                                            type="number" 
+                                            min="1" 
+                                            placeholder="Introduce nº de ocupantes"
+                                            className="bg-transparent shadow-sm"
+                                            />
+                                        </Form.Group>
+
+                                        {/* Planta */}
+                                        <Form.Group className="mb-3" controlId="formPlanta">
+                                            <Form.Label className="text-start d-block">Planta</Form.Label>
+                                            <Form.Select 
+                                            aria-label="Selector de planta"
+                                            className="bg-transparent shadow-sm"
+                                            >
+                                            <option style={{ fontWeight: 'bold' }}>Selecciona planta</option>
+                                            {[0, 1, 2, 3, 4].map((planta) => (
+                                                <option key={planta} value={planta}>{planta}</option>
+                                            ))}
+                                            </Form.Select>
+                                        </Form.Group>
+
                                         </div>
                                     </div>
                                 </Container>
 
                                 {/* Botones */}
-                                <div className="d-flex flex-wrap justify-content-center w-100 gap-3 mt-2">
-                                    <div className="d-flex flex-column align-items-center">
-                                        <Button
-                                            //onClick={}
-                                            variant="outline-light"
-                                            style={{
-                                                backgroundColor: '#000842',
-                                                color: 'white',
-                                                borderRadius: '10px',
-                                                padding: '6px 16px',
-                                                marginTop: '0.5rem',
-                                                width: '130px'
-                                            }}
-                                        > 
-                                            Buscar
+                                <div className="position-relative d-flex align-items-center w-100 mt-4 px-2">
+                                    {/*Buscar*/}
+                                    <div className="w-100 d-flex justify-content-center">
+                                        <Button 
+                                        variant="outline-light" 
+                                        onClick={() => {}} 
+                                        style={{ 
+                                            backgroundColor: '#000842', 
+                                            color: 'white', 
+                                            borderRadius: '10px', 
+                                            padding: '6px 16px', 
+                                            width: 'auto', 
+                                            minWidth: '130px' 
+                                        }}
+                                        >
+                                        Buscar
                                         </Button>
                                     </div>
-                                    <div className="d-flex flex-column align-items-center">
-                                        <Button
-                                            //onClick={}
-                                            variant="outline-light"
-                                            style={{
-                                                backgroundColor: '#000842',
-                                                color: 'white',
-                                                borderRadius: '10px',
-                                                padding: '6px 16px',
-                                                marginTop: '0.5rem',
-                                                width: '130px'
-                                            }}
-                                        > 
-                                            Reiniciar
+                                    
+                                    {/* Reiniciar*/}
+                                    <div className="position-absolute" style={{ right: '8px' }}>
+                                        <Button 
+                                        variant="outline-light" 
+                                        onClick={() => {}} 
+                                        style={{ 
+                                            backgroundColor: '#000842', 
+                                            color: 'white', 
+                                            borderRadius: '10px', 
+                                            padding: '6px 10px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            minWidth: '42px' 
+                                        }}
+                                        >
+                                        <FiRefreshCw size={20} />
                                         </Button>
                                     </div>
                                 </div>
+
                             </Card.Body>
                         </Card>
                     </Col>
