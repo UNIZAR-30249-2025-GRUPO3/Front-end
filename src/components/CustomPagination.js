@@ -1,10 +1,17 @@
-import React from "react";
+import React, { useEffect} from "react";
 import { Button } from "react-bootstrap";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const Pagination = ({ currentPage, totalPages, paginate }) => {
   const pageNumbers = [];
   const maxVisiblePages = 3;
+
+  useEffect(() => {
+    const scrollableContainer = document.querySelector('.overflow-auto');
+    if (scrollableContainer) {
+      scrollableContainer.scrollTop = 0;
+    }
+  }, [currentPage]);
 
   if (totalPages <= maxVisiblePages) {
     for (let i = 1; i <= totalPages; i++) {
