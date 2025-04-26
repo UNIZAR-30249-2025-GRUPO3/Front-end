@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
-import { FiCalendar, FiTrash2 } from 'react-icons/fi';
+import { FiCalendar, FiTrash2, FiCheck } from 'react-icons/fi';
 import CustomNavbar from '../components/CustomNavbar';
 import CustomModal from '../components/CustomModal';
 import Pagination from "../components/CustomPagination";
@@ -8,7 +8,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Reservations = () => {
     const [selectedReservation, setSelectedReservation] = useState(null);
-    const [showModal, setShowModal] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showApproveModal, setShowApproveModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showMyReservations, setShowMyReservations] = useState(true);
     const [isManager] = useState(true);     // DEMOMENTO HARCODEADO ********************
@@ -120,13 +121,23 @@ const Reservations = () => {
         reservation.endTime = new Date(reservation.startTime.getTime() + reservation.duration * 60000);
     });
 
-    const handleDeleteClick = (user) => {
+    const handleCancelClick = (user) => {
         setSelectedReservation(user);
-        setShowModal(true);
+        setShowCancelModal(true);
     };
 
-    const handleCloseModal = () => {
-        setShowModal(false);
+    const handleCloseCancelModal = () => {
+        setShowCancelModal(false);
+        setSelectedReservation(null);
+    };
+
+    const handleApproveClick = (user) => {
+        setSelectedReservation(user);
+        setShowApproveModal(true);
+    };
+      
+    const handleCloseApproveModal = () => {
+        setShowApproveModal(false);
         setSelectedReservation(null);
     };
 
@@ -214,18 +225,34 @@ const Reservations = () => {
                                         </div>
                                     </div>
                                     <div className="d-flex align-items-center ms-3">
+                                        {isManager && user.invalid && (
+                                            <Button
+                                            variant="outline-light"
+                                            className="d-flex align-items-center justify-content-center me-2"
+                                            onClick={() => handleApproveClick(user)} 
+                                            style={{
+                                                backgroundColor: 'white',
+                                                borderRadius: '6px',
+                                                padding: '8px',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                            }}
+                                            >
+                                            <FiCheck style={{ color: 'green', fontSize: '20px' }} />
+                                            </Button>
+                                        )}
+                                        
                                         <Button
-                                        variant="outline-light"
-                                        className="d-flex align-items-center justify-content-center"
-                                        onClick={() => handleDeleteClick(user)}
-                                        style={{
+                                            variant="outline-light"
+                                            className="d-flex align-items-center justify-content-center"
+                                            onClick={() => handleCancelClick(user)}
+                                            style={{
                                             backgroundColor: 'white',
                                             borderRadius: '6px',
                                             padding: '8px',
                                             boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                        }}
+                                            }}
                                         >
-                                        <FiTrash2 style={{ color: 'red', fontSize: '20px' }} />
+                                            <FiTrash2 style={{ color: 'red', fontSize: '20px' }} />
                                         </Button>
                                     </div>
                                 </div>
@@ -261,13 +288,22 @@ const Reservations = () => {
                 </div>
             </Container>
             <CustomModal
-                show={showModal}
-                onHide={handleCloseModal}
+                show={showCancelModal}
+                onHide={handleCloseCancelModal}
                 title={selectedReservation ? `Cancelar reserva del ${selectedReservation.category} ${selectedReservation.spaceId}` : "Cancelar reserva"}
                 bodyText={selectedReservation ? `¿Estás seguro que deseas cancelar la reserva del ${selectedReservation.category} ${selectedReservation.spaceId} con fecha de inicio: ${selectedReservation.startTime?.toLocaleString()}?`
                     : "¿Estás seguro que deseas cancelar la reserva?"}
                 confirmButtonText="Cancelar reserva"
-                onSave={handleCloseModal}
+                onSave={handleCloseCancelModal}
+            />
+            <CustomModal
+                show={showApproveModal}
+                onHide={handleCloseApproveModal}
+                title={selectedReservation ? `Volver a la normalidad la reserva del ${selectedReservation.category} ${selectedReservation.spaceId}` : "Volver a la normalidad la reserva"}
+                bodyText={selectedReservation ? `¿Quieres volver a la normalidad la reserva del ${selectedReservation.category} ${selectedReservation.spaceId} con fecha de inicio: ${selectedReservation.startTime?.toLocaleString()}?`
+                    : "¿Quieres volver a la normalidad esta reserva?"}
+                confirmButtonText="Normalizar reserva"
+                onSave={handleCloseApproveModal}
             />
         </div>
     );
