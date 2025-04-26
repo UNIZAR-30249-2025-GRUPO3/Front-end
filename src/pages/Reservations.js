@@ -10,6 +10,9 @@ const Reservations = () => {
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [showMyReservations, setShowMyReservations] = useState(true);
+    const [isManager] = useState(true);     // DEMOMENTO HARCODEADO ********************
+
     const reservationsPerPage = 5;
 
     //  DATOS PARA PRUEBAS, LUEGO ESTO SE SACA DE LA API ****************************
@@ -127,6 +130,10 @@ const Reservations = () => {
         setSelectedReservation(null);
     };
 
+    const toggleMyReservations = () => {
+        setShowMyReservations(!showMyReservations);
+    };
+
     const totalPages = Math.ceil(data.length / reservationsPerPage);
 
     const paginate = (pageNumber) => {
@@ -152,7 +159,9 @@ const Reservations = () => {
                             />
                         </div>
                         <div>
-                            <h2 className="mb-1 text-center">Mis reservas</h2> 
+                            <h2 className="mb-1 text-center">
+                                {showMyReservations ? "Mis reservas" : "Todas las reservas"}
+                            </h2> 
                             <p className="text-muted text-start">Tienes {data.length} reservas</p> 
                         </div>
                     </Col>
@@ -161,7 +170,7 @@ const Reservations = () => {
                     style={{
                         flexGrow: 1,
                         minHeight: '200px',
-                        maxHeight: 'calc(100vh - 280px)',
+                        maxHeight: 'calc(100vh - 290px)',
                         overflowY: 'auto',
                         border: '1px solid #ddd',
                         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
@@ -192,6 +201,11 @@ const Reservations = () => {
                                         </span>
                                         </div>
                                         <div className="d-flex flex-wrap">
+                                        {!showMyReservations && (
+                                            <div className="me-4 mb-2">
+                                                <strong>Usuario:</strong> {user.userName}
+                                            </div>
+                                        )}
                                         <div className="me-4 mb-2"><strong>Tipo de Uso:</strong> {user.usageType}</div>
                                         <div className="me-4 mb-2"><strong>Asistentes Máx.:</strong> {user.maxAttendees}</div>
                                         <div className="me-4 mb-2"><strong>Inicio:</strong> {user.startTime?.toLocaleString()}</div>
@@ -219,8 +233,31 @@ const Reservations = () => {
                         ))}
                     </Row>
                 </div>
-                <div className="pt-3 pb-2">
-                    <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
+                <div className="pt-4 pb-2">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                        <div className="d-none d-md-block" style={{width: "225px"}}></div>
+                        
+                        <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
+                        
+                        <div className="d-flex justify-content-center justify-content-md-end" style={{ width: "225px" }}>
+                            {isManager && (
+                                <Button
+                                onClick={toggleMyReservations}
+                                style={{
+                                    borderRadius: "30px",
+                                    backgroundColor: "#000842",
+                                    borderColor: "#000842",
+                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                    transition: "all 0.3s ease",
+                                    letterSpacing: "0.5px",
+                                    fontSize: "1rem",
+                                }}
+                                >
+                                {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </Container>
             <CustomModal
