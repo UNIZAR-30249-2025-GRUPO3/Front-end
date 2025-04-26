@@ -23,6 +23,7 @@ const Reservations = () => {
             maxAttendees: 30,
             startTime: new Date("2025-04-26T08:00:00"),
             duration: 90,
+            invalid: false,
         },
         {
             id: 2,
@@ -33,6 +34,7 @@ const Reservations = () => {
             maxAttendees: 20,
             startTime: new Date("2025-04-26T10:00:00"),
             duration: 60,
+            invalid: false,
         },
         {
             id: 3,
@@ -43,6 +45,7 @@ const Reservations = () => {
             maxAttendees: 15,
             startTime: new Date("2025-04-26T11:00:00"),
             duration: 120,
+            invalid: true,
         },
         {
             id: 4,
@@ -53,6 +56,7 @@ const Reservations = () => {
             maxAttendees: 10,
             startTime: new Date("2025-04-26T13:00:00"),
             duration: 45,
+            invalid: false,
         },
         {
             id: 5,
@@ -72,6 +76,7 @@ const Reservations = () => {
             maxAttendees: 20,
             startTime: new Date("2025-04-27T08:00:00"),
             duration: 60,
+            invalid: false,
         },
         {
             id: 7,
@@ -82,6 +87,7 @@ const Reservations = () => {
             maxAttendees: 15,
             startTime: new Date("2025-04-27T09:00:00"),
             duration: 120,
+            invalid: true,
         },
         {
             id: 8,
@@ -92,6 +98,7 @@ const Reservations = () => {
             maxAttendees: 10,
             startTime: new Date("2025-04-27T11:00:00"),
             duration: 45,
+            invalid: true,
         },
         {
             id: 9,
@@ -102,6 +109,7 @@ const Reservations = () => {
             maxAttendees: 25,
             startTime: new Date("2025-04-27T12:00:00"),
             duration: 90,
+            invalid: false,
         },
     ];
 
@@ -166,7 +174,7 @@ const Reservations = () => {
                                 <div
                                     className="d-flex w-100 p-3"
                                     style={{
-                                        backgroundColor: '#D6EAFF',
+                                        backgroundColor: user.invalid ? '#FFD6D6' : '#D6EAFF',
                                         border: '0.5px solid #ddd',
                                         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
                                         borderRadius: '10px',
@@ -178,6 +186,9 @@ const Reservations = () => {
                                         <div className="d-flex flex-wrap mb-2">
                                         <span className="fw-bold fs-5 text-capitalize me-2">
                                             {user.category} {user.spaceId}
+                                            {user.invalid && (
+                                                <span className="fw-normal fs-6"> - (Reserva potencialmente inválida)</span>
+                                            )}
                                         </span>
                                         </div>
                                         <div className="d-flex flex-wrap">
