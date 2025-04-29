@@ -1,22 +1,22 @@
 import { createContext, useContext, useState } from 'react';
 
 // Lógica de autenticación para portección de rutas
-// DEMOMENTO ASÍ, PERO NO ES NADA SEGURO!!!! ********************************
+// DEMOMENTO ASÍ CON sessionStorage, PERO NO ES NADA SEGURO!!!! ********************************
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    return sessionStorage.getItem('isAuthenticated') === 'true';
   });
 
   const login = () => {
-    localStorage.setItem('isAuthenticated', 'true');
+    sessionStorage.setItem('isAuthenticated', 'true');
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('isAuthenticated');
     setIsAuthenticated(false);
   };
 

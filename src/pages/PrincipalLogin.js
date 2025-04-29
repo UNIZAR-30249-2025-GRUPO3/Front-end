@@ -17,7 +17,7 @@ function PrincipalLogin() {
   const navigate = useNavigate();
 
   // HABRÁ QUE AÑADIR NUEVAS VERIFICACIONES CON LA API *********
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
 
@@ -40,7 +40,7 @@ function PrincipalLogin() {
 
     if (form.checkValidity() && Object.keys(newErrors).length === 0) {
       // FALTA LÓGICA DE AUTENTICACIÓN DEL BACKEND
-      login(); // activar sesión
+      await login(); // activar sesión
       navigate("/explorar"); // Redirigir a la página principal de explorar
     }
 
