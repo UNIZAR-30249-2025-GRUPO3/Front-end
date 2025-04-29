@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Container, Form, Button, Card } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import logoUnizar from "../assets/logoUnizar.png";
+import { useAuth } from '../authContext';
 
 function PrincipalLogin() {
 
@@ -10,6 +11,9 @@ function PrincipalLogin() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [validated, setValidated] = useState(false);
+
+  const { login } = useAuth();
+
   const navigate = useNavigate();
 
   // HABRÁ QUE AÑADIR NUEVAS VERIFICACIONES CON LA API *********
@@ -35,7 +39,8 @@ function PrincipalLogin() {
     setErrors(newErrors);
 
     if (form.checkValidity() && Object.keys(newErrors).length === 0) {
-      // LÓGICA DE AUTENTICACIÓN
+      // FALTA LÓGICA DE AUTENTICACIÓN DEL BACKEND
+      login(); // activar sesión
       navigate("/explorar"); // Redirigir a la página principal de explorar
     }
 

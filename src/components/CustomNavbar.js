@@ -1,10 +1,20 @@
 import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav, Form, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LogoUnizarBlanco from '../assets/logoUnizarBlanco.png';
+import { useAuth } from '../authContext';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const CustomNavbar = () => {
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <Navbar
       bg="custom"
@@ -42,8 +52,7 @@ const CustomNavbar = () => {
 
         <Form className="d-flex ps-3 ps-lg-0">
           <Button
-            as={Link}
-            to="/"
+            onClick={handleLogout}
             variant="light"
             size="sm"
             className="text-dark fw-bold mt-3 mt-lg-0 mb-2 mb-lg-0 ms-lg-2"
