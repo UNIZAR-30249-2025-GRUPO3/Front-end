@@ -1,14 +1,24 @@
-import React from "react";
+import React, { useState } from 'react';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "leaflet/dist/leaflet.css";
 import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvent } from 'react-leaflet';
 import { FiRefreshCw } from "react-icons/fi";
 import CustomNavbar from '../components/CustomNavbar';
+import ReservationPopup from '../components/ReservationPopup';
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
 
 const Explore = () => {
+
+    const [showPopup, setShowPopup] = useState(false);
+
+    const MapClickHandler = () => {
+        useMapEvent('click', () => {
+            setShowPopup(true);
+        });
+        return null;
+    };
 
     return (
         <div className="App d-flex flex-column vh-100">
@@ -157,6 +167,7 @@ const Explore = () => {
                                 maxBoundsViscosity={1.0}
                                 style={{ width: "100%", height: "100%" }}
                             >
+                                <MapClickHandler />
                                 <TileLayer 
                                     //light_all: Estilo claro con todas las etiquetas
                                     //rastertiles/voyager_nolabels: Estilo Voyager sin etiquetas
@@ -182,6 +193,8 @@ const Explore = () => {
                     </Col>
                 </Row>
             </Container>
+
+            <ReservationPopup show={showPopup} onHide={() => setShowPopup(false)} />
         </div>
     );
 };
