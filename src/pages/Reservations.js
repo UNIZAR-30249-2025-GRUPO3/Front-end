@@ -12,7 +12,8 @@ const Reservations = () => {
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showMyReservations, setShowMyReservations] = useState(true);
-    const [isManager] = useState(true);     // DEMOMENTO HARCODEADO ********************
+
+    const userRole = sessionStorage.getItem("userRole");
 
     const reservationsPerPage = 5;
 
@@ -225,7 +226,7 @@ const Reservations = () => {
                                         </div>
                                     </div>
                                     <div className="d-flex align-items-center ms-3">
-                                        {isManager && user.invalid && (
+                                        {userRole === 'gerente' && user.invalid && (
                                             <Button
                                             variant="outline-light"
                                             className="d-flex align-items-center justify-content-center me-2"
@@ -267,7 +268,7 @@ const Reservations = () => {
                         <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         
                         <div className="d-flex justify-content-center justify-content-md-end" style={{ width: "225px" }}>
-                            {isManager && (
+                            {userRole === 'gerente' && (
                                 <Button
                                 onClick={toggleMyReservations}
                                 style={{
