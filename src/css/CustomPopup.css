@@ -1,20 +1,14 @@
 /* Limita el tamaño del modal */
 .custom-modal {
-    max-width: 60%;
-}
-
-.custom-modal .modal-dialog {
     width: 85vw;
-    max-height: 90vh;
-    margin: 1.75rem auto;
-    display: flex;
-    flex-direction: column;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 @media (max-width: 768px) {
-    .custom-modal .modal-dialog {
-        width: 85vw;
-        margin: 1rem auto;
+    .custom-modal {
+        width: 90vw;
     }
 }
 
