@@ -5,6 +5,16 @@ import '../css/CustomPopup.css';
 const CustomPopup = ({ show, onHide }) => {
     const userRole = sessionStorage.getItem("userRole");
     const [editMode, setEditMode] = useState(false);
+    const [isReserving, setIsReserving] = useState(false);
+    const [reservationError, setReservationError] = useState("");
+
+    const buttonStyle = {
+        backgroundColor: '#000842',
+        color: 'white',
+        borderRadius: '10px',
+        padding: '7px 16px',
+        minWidth: '140px'
+    };
 
     // Información del espacio - DEMOMENTO HARDCODEADA
     const [spaceData, setSpaceData] = useState({
@@ -46,8 +56,10 @@ const CustomPopup = ({ show, onHide }) => {
         <Modal
             show={show}
             onHide={() => {
-                setEditMode(false);
                 onHide();
+                setEditMode(false);
+                setIsReserving(false);
+                setReservationError("");
             }}
             centered
             dialogClassName="custom-modal"
@@ -60,16 +72,20 @@ const CustomPopup = ({ show, onHide }) => {
                         type="button" 
                         className="btn-close" 
                         onClick={() => {
-                            setEditMode(false);
                             onHide();
+                            setEditMode(false);
+                            setIsReserving(false);
+                            setReservationError("");
                         }}
                         aria-label="Close"
                     ></button>
                 </div>
                 <Modal.Title className="w-100 text-center">
-                    {editMode 
-                        ? `Modificar información variable del ${spaceData.name}` 
-                        : spaceData.name}
+                {editMode
+                    ? `Modificar información variable del ${spaceData.name}`
+                    : isReserving
+                    ? `Reservar ${spaceData.name}`
+                    : spaceData.name}
                 </Modal.Title>
             </Modal.Header>
 
@@ -103,9 +119,9 @@ const CustomPopup = ({ show, onHide }) => {
                                     onChange={(e) => {
                                         const newType = e.target.value;
                                         let newTargets = [];
-                                        if (newType === "department") {
+                                        if (newType === "departamento") {
                                             newTargets = ["informática e ingeniería de sistemas"];
-                                        } else if (newType === "person") {
+                                        } else if (newType === "persona") {
                                             newTargets = [""];
                                         }
                                         setSpaceData({
@@ -206,7 +222,70 @@ const CustomPopup = ({ show, onHide }) => {
                             />
                         </Form.Group>
                     </Form>
-                ) : (
+                ): isReserving ? (
+                    // Contenido si se esta realizando la reserva
+                    <Form>
+                      {/* Campo para indicar el tipo de uso*/}
+                      <Form.Group className="mb-2">
+                        <Form.Label>Tipo de uso</Form.Label>
+                        <Form.Select>
+                          <option value="docencia">Docencia</option>
+                          <option value="investigacion">Investigación</option>
+                          <option value="gestion">Gestión</option>
+                          <option value="otro">Otro</option>
+                        </Form.Select>
+                      </Form.Group>
+                  
+                      {/* Campo para indicar el número máximo de asistentes */}
+                      <Form.Group className="mb-2">
+                        <Form.Label>Número máximo de asistentes</Form.Label>
+                        <Form.Control type="number" min="1" />
+                      </Form.Group>
+                  
+                      {/* Campo para indicar la fecha de inicio */}
+                      <Form.Group className="mb-2">
+                        <Form.Label>Fecha y hora de inicio</Form.Label>
+                        <Form.Control type="datetime-local" />
+                      </Form.Group>
+                  
+                      {/* Campo para indicar la duración de la reserva */}
+                      <Form.Group className="mb-2">
+                        <Form.Label>Duración (en minutos)</Form.Label>
+                        <Form.Control type="number" min="1" />
+                      </Form.Group>
+                  
+                      {/* Campo para indicar detalles adicionales */}
+                      <Form.Group className="mb-2">
+                        <Form.Label>Detalles adicionales</Form.Label>
+                        <Form.Control as="textarea" rows={2} />
+                      </Form.Group>
+
+                      {/* Mensaje en caso de error */}
+                      {reservationError && (
+                        <div className="text-danger fw-bold mb-2">
+                          ⚠ {reservationError}
+                        </div>
+                      )}
+                  
+                      {/* Botón para añadir nuevos espacios a la reserva */}
+                      <div className="d-flex justify-content-center">
+                        <Button
+                          variant="outline-light"
+                          style={{
+                            backgroundColor: "#000842",
+                            color: "white",
+                            borderRadius: "10px",
+                            padding: "6px 12px",
+                          }}
+                          onClick={() =>{}}
+                        >
+                          + Añadir otro espacio a la reserva
+                        </Button>
+                      </div>
+                  
+                      
+                    </Form>
+                  ) : (
                     // En el caso de que no se este editando se muestra la info del espacio
                     <div>
                         <h5 className="mb-4 text-center">Detalles del espacio</h5>
@@ -238,38 +317,54 @@ const CustomPopup = ({ show, onHide }) => {
 
             {/* Botones variable del pop up */}
             <Modal.Footer className="d-flex justify-content-center gap-5">
-                {!editMode && (
+                {!editMode && !isReserving && (
+                    <>
+                        <Button
+                            variant="outline-light"
+                            onClick={() => {
+                                setIsReserving(true);
+                                setEditMode(false);
+                            }}
+                            style={buttonStyle}
+                        >
+                            Reservar
+                        </Button>
+
+                        {userRole === "gerente" && (
+                            <Button
+                                variant="outline-light"
+                                onClick={() => setEditMode(true)}
+                                style={buttonStyle}
+                            >
+                                Cambiar info
+                            </Button>
+                        )}
+                    </>
+                )}
+
+                {editMode && userRole === "gerente" && (
                     <Button
                         variant="outline-light"
-                        onClick={() => {}}
-                        style={{
-                            backgroundColor: '#000842',
-                            color: 'white',
-                            borderRadius: '10px',
-                            padding: '7px 16px',
-                            minWidth: '120px'
-                        }}
+                        onClick={handleModify}
+                        style={buttonStyle}
                     >
-                        Reservar
+                        Modificar info
                     </Button>
                 )}
 
-                {userRole === "gerente" && (
+                {isReserving && (
                     <Button
                         variant="outline-light"
                         onClick={() => {
-                            if (editMode) handleModify();
-                            else setEditMode(true);
+                            // Harcodeado un error de validación
+                            setReservationError("Debe seleccionar una fecha y hora válida.");
+                            // Casp en el que no hay error (demomento comentado)
+                            // setIsReserving(false);
+                            // onHide();
                         }}
-                        style={{
-                            backgroundColor: '#000842',
-                            color: 'white',
-                            borderRadius: '10px',
-                            padding: '7px 16px',
-                            minWidth: '160px'
-                        }}
+                        style={buttonStyle}
                     >
-                        {editMode ? "Modificar info" : "Cambiar info"}
+                        Finalizar reserva
                     </Button>
                 )}
             </Modal.Footer>
