@@ -3,6 +3,9 @@ import { Modal, Button } from 'react-bootstrap';
 import '../css/CustomPopup.css';
 
 const CustomPopup = ({ show, onHide }) => {
+
+    const userRole = sessionStorage.getItem("userRole");
+
     return (
         <Modal
             show={show}
@@ -29,10 +32,6 @@ const CustomPopup = ({ show, onHide }) => {
                         <div className="col-md-6">
                             <table className="table table-sm table-striped table-bordered shadow-sm rounded">
                                 <tbody>
-                                    <tr>
-                                        <th scope="row">Nombre</th>
-                                        <td>Aula 2.3</td>
-                                    </tr>
                                     <tr>
                                         <th scope="row">Planta</th>
                                         <td>2ª</td>
@@ -77,7 +76,7 @@ const CustomPopup = ({ show, onHide }) => {
                     </div>
                 </div>
             </Modal.Body>
-            <Modal.Footer className="d-flex justify-content-center">
+            <Modal.Footer className="d-flex justify-content-center gap-5">
                 <Button
                     variant="outline-light" 
                     onClick={() => {}} 
@@ -92,6 +91,23 @@ const CustomPopup = ({ show, onHide }) => {
                 >
                     Reservar
                 </Button>
+
+                {userRole === "gerente" && (
+                    <Button
+                        variant="outline-light" 
+                        onClick={() => {}} 
+                        style={{
+                            backgroundColor: '#000842',
+                            color: 'white',
+                            borderRadius: '10px',
+                            padding: '7px 16px',
+                            width: 'auto',
+                            minWidth: '120px'
+                        }}
+                    >
+                        Cambiar info
+                    </Button>
+                )}
             </Modal.Footer>
         </Modal>
     );
