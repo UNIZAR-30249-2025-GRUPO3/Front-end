@@ -31,3 +31,15 @@
 body.modal-open {
     overflow: hidden;
 }
+
+/* Aspectos estéticos del contenido */
+.table th {
+    width: 50%;
+    font-weight: 600;
+    color: #333;
+}
+
+.table td {
+    color: #555;
+}
+
