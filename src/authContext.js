@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
     return sessionStorage.getItem('userRole') || null;
   });
 
-  const login = (role = null) => {
+  const login = (role = "gerente") => {
     sessionStorage.setItem('isAuthenticated', 'true');
     setIsAuthenticated(true);
     
