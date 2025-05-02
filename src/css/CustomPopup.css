@@ -1,0 +1,45 @@
+/* Limita el tamaño del modal */
+.custom-modal {
+    width: 85vw;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 768px) {
+    .custom-modal {
+        width: 90vw;
+    }
+}
+
+/* Ajusta el contenido del modal para que no se desborde */
+.custom-modal .modal-content {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Scroll solo en el body del modal si el contenido es largo */
+.custom-modal-body {
+    overflow-y: auto;
+    max-height: 70vh;
+    padding-right: 1rem;
+}
+
+/* Evita el scroll del body de fondo cuando el modal está abierto */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Aspectos estéticos del contenido */
+.table th {
+    width: 50%;
+    font-weight: 600;
+    color: #333;
+}
+
+.table td {
+    color: #555;
+}
+
