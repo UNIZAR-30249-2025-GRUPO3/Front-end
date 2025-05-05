@@ -1,18 +1,26 @@
-import React from 'react';
-import { Navbar, Nav, Form, Button } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Navbar, Nav, Form, Button, Spinner } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import LogoUnizarBlanco from '../assets/logoUnizarBlanco.png';
 import { useAuth } from '../authContext';
+import LogoUnizarBlanco from '../assets/logoUnizarBlanco.png';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const CustomNavbar = () => {
-
-  const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      navigate('/');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -57,8 +65,24 @@ const CustomNavbar = () => {
             size="sm"
             className="text-dark fw-bold mt-3 mt-lg-0 mb-2 mb-lg-0 ms-lg-2"
             style={{ minWidth: '120px', borderRadius: "25px" }}
+            disabled={isLoggingOut || !isAuthenticated}
           >
-            Cerrar sesión
+            {isLoggingOut ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-1"
+                  style={{ width: '0.8rem', height: '0.8rem' }}
+                />
+                <span>Saliendo...</span>
+              </>
+            ) : (
+              'Cerrar sesión'
+            )}
           </Button>
         </Form>
       </Navbar.Collapse>

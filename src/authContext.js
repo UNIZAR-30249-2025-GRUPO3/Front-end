@@ -1,40 +1,99 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-// Lógica de autenticación para protección de rutas
-// DEMOMENTO ASÍ CON sessionStorage, PERO NO ES NADA SEGURO!!!! ********************************
-
+const API_URL = 'https://back-end-sv3z.onrender.com';
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('isAuthenticated') === 'true';
-  });
-
-  const [userRole, setUserRole] = useState(() => {
-    return sessionStorage.getItem('userRole') || null;
-  });
-
-  const login = (role = "gerente") => {
-    sessionStorage.setItem('isAuthenticated', 'true');
-    setIsAuthenticated(true);
+  // Se verifica el estado de autenticación al cargar la aplicación
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      const storedAuth = sessionStorage.getItem('isAuthenticated') === 'true';
+      const storedRole = sessionStorage.getItem('userRole');
+      const storedUserId = sessionStorage.getItem('userId');
+      
+      setIsAuthenticated(storedAuth);
+      setUserRole(storedRole || null);
+      setUserId(storedUserId || null);
+      setIsLoading(false);
+    };
     
-    if (role) {
-      sessionStorage.setItem('userRole', role);
-      setUserRole(role);
+    checkAuthStatus();
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
+        email,
+        password
+      }, {
+        withCredentials: true
+      });
+
+      if (response.data && response.data.user) {
+
+        sessionStorage.setItem('isAuthenticated', 'true');
+        sessionStorage.setItem('userRole', response.data.user.role[0]);
+        sessionStorage.setItem('userId', response.data.user.user_id);
+        
+        setIsAuthenticated(true);
+        setUserRole(response.data.user.role[0]);
+        setUserId(response.data.user.user_id);
+        
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Respuesta de login inválida' };
+
+    } catch (error) {
+      console.error('Error durante el login:', error);
+      const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
+      return { success: false, error: errorMessage };
+
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    sessionStorage.removeItem('isAuthenticated');
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      await axios.get(`${API_URL}/api/auth/logout`, {
+        withCredentials: true
+      });
 
-    sessionStorage.removeItem('userRole');
-    setUserRole(null);
+    } catch (error) {
+
+      console.error('Error durante el logout:', error);
+    } finally {
+
+      // Se limpian datos de sesión incluso si la llamada API falla
+      sessionStorage.removeItem('isAuthenticated');
+      sessionStorage.removeItem('userRole');
+      sessionStorage.removeItem('userId');
+      
+      setIsAuthenticated(false);
+      setUserRole(null);
+      setUserId(null);
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      userRole, 
+      userId, 
+      login, 
+      logout, 
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );
