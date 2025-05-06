@@ -56,7 +56,19 @@ function PrincipalLogin() {
       if (result.success) {
         navigate("/explorar"); // Se redirige a la página principal de explorar
       } else {
-        setLoginError(result.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+
+        // Manejo de errores específicos
+        const errorMsg = result.error;
+        
+        if (errorMsg.includes('Usuario no encontrado')) {
+          setLoginError('Este email no está registrado en el sistema');
+        } else if (errorMsg.includes('Contraseña incorrecta')) {
+          setLoginError('Contraseña incorrecta. Inténtalo de nuevo');
+        } else if (errorMsg.includes('No hay sesión activa')) {
+          setLoginError('La sesión ha caducado. Por favor, inicia sesión nuevamente');
+        } else {
+          setLoginError(errorMsg || 'Error al iniciar sesión. Verifica tus credenciales.');
+        }
       }
     } catch (error) {
       console.error('Error en el proceso de login:', error);
@@ -126,7 +138,9 @@ function PrincipalLogin() {
             {/* Mensaje de error */}
             {loginError && (
               <Alert variant="danger" className="mb-4">
-                {loginError}
+                <div className="d-flex align-items-center">
+                  <strong>Error:</strong>&nbsp;{loginError}
+                </div>
               </Alert>
             )}
 

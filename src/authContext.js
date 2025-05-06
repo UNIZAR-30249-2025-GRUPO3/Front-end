@@ -53,8 +53,14 @@ export function AuthProvider({ children }) {
 
     } catch (error) {
       console.error('Error durante el login:', error);
-      const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
-      return { success: false, error: errorMessage };
+      
+      if (error.response && error.response.data) {
+        const errorData = error.response.data;
+        const specificError = errorData.error || errorData.message || JSON.stringify(errorData);
+        return { success: false, error: specificError };
+      }
+      
+      return { success: false, error: 'Error de conexión con el servidor' };
 
     } finally {
       setIsLoading(false);
