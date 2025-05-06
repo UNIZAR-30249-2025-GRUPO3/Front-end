@@ -70,8 +70,8 @@ const Explore = () => {
                                         <Form.Group className="mb-3" controlId="formCategoria">
                                             <Form.Label className="text-start d-block">Categoría</Form.Label>
                                             <Form.Select 
-                                            aria-label="Selector de categorías de reserva"
-                                            className="bg-transparent shadow-sm"
+                                                aria-label="Selector de categorías de reserva"
+                                                className="bg-transparent shadow-sm"
                                             >
                                             <option style={{ fontWeight: 'bold' }}>Selecciona categoría</option>
                                             {categoriaReserva.map((categoria, index) => (
@@ -84,13 +84,12 @@ const Explore = () => {
                                         <Form.Group className="mb-3" controlId="formPlanta">
                                             <Form.Label className="text-start d-block">Planta</Form.Label>
                                             <Form.Select 
-                                            aria-label="Selector de planta"
-                                            className="bg-transparent shadow-sm"
+                                                aria-label="Selector de planta"
+                                                className="bg-transparent shadow-sm"
                                             >
-                                            <option style={{ fontWeight: 'bold' }}>Selecciona planta</option>
-                                            {[0, 1, 2, 3, 4].map((planta) => (
-                                                <option key={planta} value={planta}>{planta}</option>
-                                            ))}
+                                                {[0, 1, 2, 3, 4].map((planta) => (
+                                                    <option key={planta} value={planta}>{planta}</option>
+                                                ))}
                                             </Form.Select>
                                         </Form.Group>
 
