@@ -26,7 +26,11 @@ const CustomPopup = ({ show, onHide }) => {
         isReservable: true,
         assignmentTarget: { type: "eina", targets: [] },
         maxUsagePercentage: 80,
-        customSchedule: null,
+        customSchedule: {
+            weekdays: { open: "", close: "" },
+            saturday: { open: "", close: "" },
+            sunday: { open: "", close: "" },
+        },
     });
 
     const handleInputChange = (e) => {
@@ -197,17 +201,63 @@ const CustomPopup = ({ show, onHide }) => {
                         </Form.Group>
 
                         {/* Campo para los horarios de reserva */}
-                        <Form.Group className="mb-2">
-                            <Form.Label>Horario disponible para reservas</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Ej: 08:00-18:00 o vacío para usar el del edificio"
-                                name="customSchedule"
-                                value={spaceData.customSchedule || ""}
-                                onChange={(e) =>
-                                    setSpaceData({ ...spaceData, customSchedule: e.target.value || null })
-                                }
-                            />
+                        <Form.Group>
+                            <Form.Label>Horario de reservas</Form.Label>
+                            <div className="table-responsive">
+                                <table className="table table-bordered text-center align-middle" style={{ tableLayout: 'fixed', width: '100%' }}>
+                                    <thead>
+                                        <tr>
+                                            <th>Laborables</th>
+                                            <th>Sábados</th>
+                                            <th>Domingos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            {['weekdays', 'saturday', 'sunday'].map((dayKey) => (
+                                                <td key={dayKey}>
+                                                    <div className="d-flex justify-content-center gap-2">
+                                                        <Form.Control
+                                                            type="time"
+                                                            value={spaceData.customSchedule[dayKey].open}
+                                                            onChange={(e) =>
+                                                                setSpaceData({
+                                                                    ...spaceData,
+                                                                    customSchedule: {
+                                                                        ...spaceData.customSchedule,
+                                                                        [dayKey]: {
+                                                                            ...spaceData.customSchedule[dayKey],
+                                                                            open: e.target.value,
+                                                                        },
+                                                                    },
+                                                                })
+                                                            }
+                                                            style={{ minWidth: 0 }}
+                                                        />
+                                                        <Form.Control
+                                                            type="time"
+                                                            value={spaceData.customSchedule[dayKey].close}
+                                                            onChange={(e) =>
+                                                                setSpaceData({
+                                                                    ...spaceData,
+                                                                    customSchedule: {
+                                                                        ...spaceData.customSchedule,
+                                                                        [dayKey]: {
+                                                                            ...spaceData.customSchedule[dayKey],
+                                                                            close: e.target.value,
+                                                                        },
+                                                                    },
+                                                                })
+                                                            }
+                                                            style={{ minWidth: 0 }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </Form.Group>
 
                         {/* Campo para indicar si es reservable */}
@@ -297,16 +347,38 @@ const CustomPopup = ({ show, onHide }) => {
                                         <tr><th scope="row">Capacidad</th><td>{spaceData.capacity} personas</td></tr>
                                         <tr><th scope="row">Tipo de espacio</th><td>{spaceData.spaceType}</td></tr>
                                         <tr><th scope="row">Categoría de reserva</th><td>{spaceData.reservationCategory}</td></tr>
+                                        <tr><th scope="row">Reservable</th><td>{spaceData.isReservable ? "Sí" : "No"}</td></tr>
                                     </tbody>
                                 </table>
                             </div>
                             <div className="col-md-6">
                                 <table className="table table-sm table-striped table-bordered shadow-sm rounded">
                                     <tbody>
-                                        <tr><th scope="row">Reservable</th><td>{spaceData.isReservable ? "Sí" : "No"}</td></tr>
                                         <tr><th scope="row">Asignado a</th><td>{spaceData.assignmentTarget.type}</td></tr>
                                         <tr><th scope="row">Uso máximo permitido</th><td>{spaceData.maxUsagePercentage}%</td></tr>
-                                        <tr><th scope="row">Horario personalizado</th><td>{spaceData.customSchedule || "No (usa el del edificio)"}</td></tr>
+                                        <tr>
+                                            <th scope="row">Horario de reservas</th>
+                                            <td>
+                                                <div>
+                                                    <strong>Laborables:</strong>{" "}
+                                                    {spaceData.customSchedule?.weekdays.open && spaceData.customSchedule?.weekdays.close
+                                                        ? `${spaceData.customSchedule.weekdays.open} - ${spaceData.customSchedule.weekdays.close}`
+                                                        : "Cerrado"}
+                                                </div>
+                                                <div>
+                                                    <strong>Sábados:</strong>{" "}
+                                                    {spaceData.customSchedule?.saturday.open && spaceData.customSchedule?.saturday.close
+                                                        ? `${spaceData.customSchedule.saturday.open} - ${spaceData.customSchedule.saturday.close}`
+                                                        : "Cerrado"}
+                                                </div>
+                                                <div>
+                                                    <strong>Domingos:</strong>{" "}
+                                                    {spaceData.customSchedule?.sunday.open && spaceData.customSchedule?.sunday.close
+                                                        ? `${spaceData.customSchedule.sunday.open} - ${spaceData.customSchedule.sunday.close}`
+                                                        : "Cerrado"}
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
