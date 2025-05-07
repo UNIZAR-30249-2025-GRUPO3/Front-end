@@ -356,6 +356,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                             <div className="col-md-6">
                                 <table className="table table-sm table-striped table-bordered shadow-sm rounded">
                                     <tbody>
+                                        <tr><th scope="row">Identificador CRE</th><td>{spaceData.creId}</td></tr>
                                         <tr><th scope="row">Asignado a</th><td>{spaceData.assignmentTarget.type}</td></tr>
                                         <tr><th scope="row">Uso máximo permitido</th><td>{spaceData.maxUsagePercentage}%</td></tr>
                                         <tr>

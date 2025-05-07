@@ -200,6 +200,7 @@ const Explore = () => {
                                                     spaceType: feature.properties.spaceType,
                                                     reservationCategory: feature.properties.reservation_category,
                                                     isReservable: feature.properties.is_reservable,
+                                                    creId: feature.id,
                                                     assignmentTarget: feature.properties.assignment_targets 
                                                         ? feature.properties.assignment_targets 
                                                         : { type: feature.properties.assignment_type || "eina", targets: [] },
