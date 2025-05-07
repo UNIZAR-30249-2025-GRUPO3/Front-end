@@ -36,31 +36,31 @@ const Explore = () => {
     });
 
     // Construye la URL de la API con los filtros aplicados
-    const buildApiUrl = () => {
+    const buildApiUrl = (customFilters = filters) => {
         const baseUrl = "https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items";
         
         let params = new URLSearchParams();
         params.append("limit", "300");
         
-        if (filters.planta) {
-            params.append("floor", filters.planta);
+        if (customFilters.planta) {
+            params.append("floor", customFilters.planta);
         }
         
-        if (filters.categoria) {
-            params.append("reservation_category", filters.categoria);
+        if (customFilters.categoria) {
+            params.append("reservation_category", customFilters.categoria);
         }
                 
         return `${baseUrl}?${params.toString()}`;
     };
 
-    const fetchSpaces = async () => {
+    const fetchSpaces = async (customFilters = filters) => {
         setIsLoading(true);
         setError(null);
 
         setFeatures([]);
         
         try {
-            const url = buildApiUrl();
+            const url = buildApiUrl(customFilters);
             console.log("Fetching URL:", url);
             
             const response = await fetch(url);
@@ -70,21 +70,19 @@ const Explore = () => {
             }
             
             const data = await response.json();
-            
             let filteredData = data.features;
-
-            // DESPUÉS CALCULARLO TENIENDO EN CUENTA EL PORCENTAJE DE OCUAPCION DEL ESPACIO ***************
+    
             // Filtro por ocupantes (capacidad mínima)
-            if (filters.ocupantes && !isNaN(parseInt(filters.ocupantes))) {
+            if (customFilters.ocupantes && !isNaN(parseInt(customFilters.ocupantes))) {
                 filteredData = filteredData.filter(feature =>
-                    feature.properties.capacity >= parseInt(filters.ocupantes)
+                    feature.properties.capacity >= parseInt(customFilters.ocupantes)
                 );
             }
-
+    
             // Filtro por identificador (nombre)
-            if (filters.identificador) {
+            if (customFilters.identificador) {
                 filteredData = filteredData.filter(feature => 
-                    feature.id === filters.identificador
+                    feature.id === customFilters.identificador
                 );
             }                      
             
@@ -101,19 +99,21 @@ const Explore = () => {
 
     useEffect(() => {
         fetchSpaces();
-    }, [filters]);    
+    }, []);   
 
     const handleSearch = () => {
         fetchSpaces();
     };
 
     const handleReset = () => {
-        setFilters({
+        const resetFilters = {
             identificador: "",
             categoria: "",
             planta: "0",
             ocupantes: ""
-        });
+        };
+        setFilters(resetFilters);
+        fetchSpaces(resetFilters);
     };
     
 
