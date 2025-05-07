@@ -6,7 +6,9 @@ import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { FiRefreshCw } from "react-icons/fi";
 import CustomNavbar from '../components/CustomNavbar';
 import ReservationPopup from '../components/ReservationPopup';
+import axios from 'axios';
 
+const API_URL = 'https://back-end-sv3z.onrender.com';
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
 
@@ -27,6 +29,7 @@ const Explore = () => {
     const [selectedSpace, setSelectedSpace] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [loadingSpaceDetails, setLoadingSpaceDetails] = useState(false);
 
     const [filters, setFilters] = useState({
         identificador: "",
@@ -116,6 +119,73 @@ const Explore = () => {
         fetchSpaces(resetFilters);
     };
     
+    // Función para obtener los detalles completos de un espacio por su ID
+    const fetchSpaceDetails = async (spaceId) => {
+        setLoadingSpaceDetails(true);
+        try {
+            console.log("Obteniendo detalles del espacio:", spaceId);
+
+            const response = await axios.get(`${API_URL}/api/spaces/${spaceId}`);
+            
+            const spaceData = response.data;
+            console.log("Datos completos del espacio recibidos:", spaceData);
+            
+            const processedSpaceData = {
+                id: spaceId,
+                name: spaceData.name || spaceId,
+                floor: spaceData.floor,
+                capacity: spaceData.capacity,
+                spaceType: typeof spaceData.spaceType === 'object' && spaceData.spaceType !== null 
+                    ? spaceData.spaceType.name 
+                    : spaceData.spaceType,
+                reservationCategory: typeof spaceData.reservationCategory === 'object' && spaceData.reservationCategory !== null 
+                    ? spaceData.reservationCategory.name 
+                    : spaceData.reservationCategory,
+                isReservable: spaceData.isReservable !== undefined ? spaceData.isReservable : false,
+                creId: spaceData.idSpace || spaceId,
+                assignmentTarget: spaceData.assignmentTarget || { type: "eina", targets: [] },
+                maxUsagePercentage: spaceData.maxUsagePercentage !== undefined ? spaceData.maxUsagePercentage : 100,
+                customSchedule: spaceData.customSchedule || {
+                    weekdays: { open: "", close: "" },
+                    saturday: { open: "", close: "" },
+                    sunday: { open: "", close: "" }
+                }
+            };
+            
+            setSelectedSpace(processedSpaceData);
+            setShowPopup(true);
+        } catch (err) {
+            console.error("Error al obtener detalles del espacio:", err);
+            // Si hay un error en la API, usamos los datos básicos del GeoJSON
+            const basicData = features.find(f => f.id === spaceId);
+            if (basicData) {
+                console.log("Usando datos de fallback para el espacio:", spaceId);
+                const fallbackData = {
+                    id: basicData.id,
+                    name: basicData.properties.nombre || basicData.id,
+                    floor: basicData.properties.floor,
+                    capacity: basicData.properties.capacity,
+                    spaceType: basicData.properties.spaceType,
+                    reservationCategory: basicData.properties.reservation_category,
+                    isReservable: basicData.properties.is_reservable || false,
+                    creId: basicData.id,
+                    assignmentTarget: basicData.properties.assignment_targets 
+                        ? basicData.properties.assignment_targets 
+                        : { type: basicData.properties.assignment_type || "eina", targets: [] },
+                    maxUsagePercentage: basicData.properties.max_usage_percentage ?? 100,
+                    customSchedule: basicData.properties.custom_schedule ?? {
+                        weekdays: { open: "", close: "" },
+                        saturday: { open: "", close: "" },
+                        sunday: { open: "", close: "" }
+                    }
+                };
+                setSelectedSpace(fallbackData);
+                setShowPopup(true);
+            }
+        } finally {
+            setLoadingSpaceDetails(false);
+        }
+    };
 
     const handleSpaceUpdate = (updatedSpaceData) => {
         setSelectedSpace(updatedSpaceData);
@@ -245,7 +315,7 @@ const Explore = () => {
 
                                 {!isLoading && !error && features.length === 0 && (
                                     <div className="text-center mb-2">
-                                        <span>No se encontrar espacios los filtros</span>
+                                        <span>No se encontraron espacios con los filtros</span>
                                     </div>
                                 )}
 
@@ -351,28 +421,8 @@ const Explore = () => {
                                         }}
                                         onEachFeature={(feature, layer) => {
                                             layer.on('click', () => {
-                                                setSelectedSpace({
-                                                    name: feature.properties.nombre,
-                                                    floor: feature.properties.floor,
-                                                    capacity: feature.properties.capacity,
-                                                    spaceType: feature.properties.spaceType,
-                                                    reservationCategory: feature.properties.reservation_category,
-                                                    isReservable: feature.properties.is_reservable,
-                                                    creId: feature.id,
-                                                    assignmentTarget: feature.properties.assignment_targets 
-                                                        ? feature.properties.assignment_targets 
-                                                        : { type: feature.properties.assignment_type || "eina", targets: [] },
-                                                    maxUsagePercentage: feature.properties.max_usage_percentage ?? 100,
-                                                    customSchedule: feature.properties.custom_schedule ?? {
-                                                        weekdays: { open: "", close: "" },
-                                                        saturday: { open: "", close: "" },
-                                                        sunday: { open: "", close: "" }
-                                                    }
-                                                });
-                                        
-                                                setShowPopup(true);
+                                                fetchSpaceDetails(feature.properties.id);
                                             });
-                                        
                                         }}
                                         
                                         style={(feature) => ({
@@ -407,6 +457,7 @@ const Explore = () => {
                     onHide={() => setShowPopup(false)}
                     initialData={selectedSpace}
                     onUpdate={handleSpaceUpdate}
+                    isLoading={loadingSpaceDetails}
                 />
             )}
 
