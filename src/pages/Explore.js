@@ -25,7 +25,8 @@ const Explore = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [features, setFeatures] = useState([]);
     const [selectedSpace, setSelectedSpace] = useState(null);
-    const [filteredFeatures, setFilteredFeatures] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const [filters, setFilters] = useState({
         identificador: "",
@@ -34,40 +35,87 @@ const Explore = () => {
         ocupantes: ""
     });
 
+    // Construye la URL de la API con los filtros aplicados
+    const buildApiUrl = () => {
+        const baseUrl = "https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items";
+        
+        let params = new URLSearchParams();
+        params.append("limit", "300");
+        
+        if (filters.planta) {
+            params.append("floor", filters.planta);
+        }
+        
+        if (filters.categoria) {
+            params.append("reservation_category", filters.categoria);
+        }
+                
+        return `${baseUrl}?${params.toString()}`;
+    };
+
+    const fetchSpaces = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        setFeatures([]);
+        
+        try {
+            const url = buildApiUrl();
+            console.log("Fetching URL:", url);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`Error de API: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            let filteredData = data.features;
+
+            // DESPUÉS CALCULARLO TENIENDO EN CUENTA EL PORCENTAJE DE OCUAPCION DEL ESPACIO ***************
+            // Filtro por ocupantes (capacidad mínima)
+            if (filters.ocupantes && !isNaN(parseInt(filters.ocupantes))) {
+                filteredData = filteredData.filter(feature =>
+                    feature.properties.capacity >= parseInt(filters.ocupantes)
+                );
+            }
+
+            // Filtro por identificador (nombre)
+            if (filters.identificador) {
+                filteredData = filteredData.filter(feature => 
+                    feature.id === filters.identificador
+                );
+            }                      
+            
+            console.log("Espacios encontrados:", filteredData.length);
+            setFeatures(filteredData);
+        } catch (err) {
+            console.error("Error al obtener datos:", err);
+            setError("No se pudieron cargar los espacios.");
+            setFeatures([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSpaces();
+    }, [filters]);    
+
     const handleSearch = () => {
-        const filtered = features.filter(feature => {
-        const props = feature.properties;
-
-        return (
-            (filters.identificador === "" || props.nombre.toLowerCase().includes(filters.identificador.toLowerCase())) &&
-            (filters.categoria === "" || props.reservation_category === filters.categoria) &&
-            (filters.planta === "0" || props.floor?.toString() === filters.planta) &&
-            (filters.ocupantes === "" || (props.capacity ?? 0) >= parseInt(filters.ocupantes))
-        );
-        });
-
-        setFilteredFeatures(filtered);
+        fetchSpaces();
     };
 
     const handleReset = () => {
         setFilters({
             identificador: "",
             categoria: "",
-            planta: "",
+            planta: "0",
             ocupantes: ""
         });
-        setFilteredFeatures([]);
     };
     
-    useEffect(() => {
-        fetch("https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items?limit=300&floor=0")
-            .then(res => res.json())
-            .then(data => {
-                console.log(data.features);
-                setFeatures(data.features);
-            })
-            .catch(err => console.error("Error fetching geojson:", err));
-    }, []);
 
     const handleSpaceUpdate = (updatedSpaceData) => {
         setSelectedSpace(updatedSpaceData);
@@ -76,8 +124,7 @@ const Explore = () => {
     };
     
     const getSpaceColor = (feature) => {
-        const spaceType = feature.properties.spaceType || "default";
-                         
+        const spaceType = feature.properties.reservation_category || feature.properties.spaceType || "default";
         return spaceTypeColors[spaceType.toLowerCase()] || spaceTypeColors.default;
     };
     
@@ -118,7 +165,7 @@ const Explore = () => {
                                         <div style={{ width: '100%', maxWidth: '700px' }}>
                                         
                                         {/* Identificador */}
-                                        <Form.Group className="mb-3" controlId="formIdentificador">
+                                        <Form.Group className="mb-2" controlId="formIdentificador">
                                             <Form.Label className="text-start d-block">Identificador</Form.Label>
                                             <Form.Control 
                                                 type="text" 
@@ -130,7 +177,7 @@ const Explore = () => {
                                         </Form.Group>
 
                                         {/* Categoría */}
-                                        <Form.Group className="mb-3" controlId="formCategoria">
+                                        <Form.Group className="mb-2" controlId="formCategoria">
                                             <Form.Label className="text-start d-block">Categoría</Form.Label>
                                             <Form.Select 
                                                 aria-label="Selector de categorías de reserva"
@@ -146,7 +193,7 @@ const Explore = () => {
                                         </Form.Group>
 
                                         {/* Planta */}
-                                        <Form.Group className="mb-3" controlId="formPlanta">
+                                        <Form.Group className="mb-2" controlId="formPlanta">
                                             <Form.Label className="text-start d-block">Planta</Form.Label>
                                             <Form.Select 
                                                 aria-label="Selector de planta"
@@ -161,8 +208,8 @@ const Explore = () => {
                                         </Form.Group>
 
                                         {/* Ocupantes máximos */}
-                                        <Form.Group className="mb-3" controlId="formOcupantes">
-                                            <Form.Label className="text-start d-block">Ocupantes máximos</Form.Label>
+                                        <Form.Group className="mb-2" controlId="formOcupantes">
+                                            <Form.Label className="text-start d-block">Ocupantes mínimos</Form.Label>
                                             <Form.Control 
                                                 type="number" 
                                                 min="1" 
@@ -177,6 +224,31 @@ const Explore = () => {
                                     </div>
                                 </Container>
 
+                                {/* Estado de la búsqueda */}
+                                {isLoading && (
+                                    <div className="text-center mb-2">
+                                        <span>Cargando espacios...</span>
+                                    </div>
+                                )}
+                                
+                                {error && (
+                                    <div className="text-danger text-center mb-2">
+                                        {error}
+                                    </div>
+                                )}
+                                
+                                {!isLoading && !error && features.length > 0 && (
+                                    <div className="text-center mb-2">
+                                        <span>Se encontraron {features.length} espacios</span>
+                                    </div>
+                                )}
+
+                                {!isLoading && !error && features.length === 0 && (
+                                    <div className="text-center mb-2">
+                                        <span>No se encontrar espacios los filtros</span>
+                                    </div>
+                                )}
+
                                 {/* Botones */}
                                 <div className="w-100 d-flex align-items-center justify-content-center pb-3 mt-auto">
                                     <div className="position-relative d-flex align-items-center" style={{ width: '90%', maxWidth: '700px' }}>
@@ -185,6 +257,7 @@ const Explore = () => {
                                             <Button 
                                             variant="outline-light" 
                                             onClick={handleSearch} 
+                                            disabled={isLoading}
                                             style={{ 
                                                 backgroundColor: '#000842', 
                                                 color: 'white', 
@@ -194,7 +267,7 @@ const Explore = () => {
                                                 minWidth: '120px' 
                                             }}
                                             >
-                                            Buscar
+                                            {isLoading ? 'Buscando...' : 'Buscar'}
                                             </Button>
                                         </div>
                                         
@@ -203,6 +276,7 @@ const Explore = () => {
                                             <Button 
                                             variant="outline-light" 
                                             onClick={handleReset} 
+                                            disabled={isLoading}
                                             style={{ 
                                                 backgroundColor: '#000842', 
                                                 color: 'white', 
@@ -264,14 +338,13 @@ const Explore = () => {
                                     </ul>
                                 </div>
                                 <TileLayer 
-                                    //light_all: Estilo claro con todas las etiquetas
-                                    //rastertiles/voyager_nolabels: Estilo Voyager sin etiquetas
                                     url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
                                     maxZoom={20}
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
                                 />
                                 {features.length > 0 && (
                                 <GeoJSON 
+                                        key={features.map(f => f.id).join('_')}
                                         data={{
                                             type: "FeatureCollection",
                                             features: features
