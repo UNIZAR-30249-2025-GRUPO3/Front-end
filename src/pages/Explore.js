@@ -10,6 +10,16 @@ import ReservationPopup from '../components/ReservationPopup';
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
 
+// Definir colores para cada tipo de espacio
+const spaceTypeColors = {
+    aula: "#FF5733",
+    seminario: "#33A8FF",
+    laboratorio: "#33FF57",
+    despacho: "#B533FF",
+    "sala común": "#FFDB33",
+    default: "#8A9597"
+};
+
 const Explore = () => {
 
     const [showPopup, setShowPopup] = useState(false);
@@ -30,6 +40,12 @@ const Explore = () => {
         setSelectedSpace(updatedSpaceData);
         
         console.log("Space data updated:", updatedSpaceData);
+    };
+    
+    const getSpaceColor = (feature) => {
+        const spaceType = feature.properties.spaceType || "default";
+                         
+        return spaceTypeColors[spaceType.toLowerCase()] || spaceTypeColors.default;
     };
     
     return (
@@ -178,6 +194,34 @@ const Explore = () => {
                                 maxBoundsViscosity={1.0}
                                 style={{ width: "100%", height: "100%" }}
                             >
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '10px',
+                                    left: '10px',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8rem',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                                    zIndex: 1000
+                                }}>
+                                    <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+                                        {Object.entries(spaceTypeColors).map(([type, color]) =>
+                                            type !== "default" && (
+                                                <li key={type} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                                                    <div style={{
+                                                        width: '12px',
+                                                        height: '12px',
+                                                        backgroundColor: color,
+                                                        marginRight: '6px',
+                                                        border: '1px solid #000'
+                                                    }}></div>
+                                                    <span>{type}</span>
+                                                </li>
+                                            )
+                                        )}
+                                    </ul>
+                                </div>
                                 <TileLayer 
                                     //light_all: Estilo claro con todas las etiquetas
                                     //rastertiles/voyager_nolabels: Estilo Voyager sin etiquetas
@@ -217,11 +261,11 @@ const Explore = () => {
                                         
                                         }}
                                         
-                                        style={() => ({
+                                        style={(feature) => ({
                                             color: "black",
                                             weight: 2,
-                                            fillColor: "#007bff",
-                                            fillOpacity: 0.4
+                                            fillColor: getSpaceColor(feature),
+                                            fillOpacity: 0.6
                                         })}
                                     />
                                 )}
