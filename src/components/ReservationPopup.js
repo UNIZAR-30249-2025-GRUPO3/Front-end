@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import '../css/CustomPopup.css';
 
-const CustomPopup = ({ show, onHide, initialData }) => {
+const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
     const userRole = sessionStorage.getItem("userRole");
     const [editMode, setEditMode] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
     const [reservationError, setReservationError] = useState("");
     const [spaceData, setSpaceData] = useState(initialData);
+    
+    useEffect(() => {
+        setSpaceData(initialData);
+    }, [initialData]);
 
     const buttonStyle = {
         backgroundColor: '#000842',
@@ -16,23 +20,6 @@ const CustomPopup = ({ show, onHide, initialData }) => {
         padding: '7px 16px',
         minWidth: '140px'
     };
-
-    // Información del espacio - DEMOMENTO HARDCODEADA
-    /*const [spaceData, setSpaceData] = useState({
-        name: "Espacio X",
-        floor: 2,
-        capacity: 30,
-        spaceType: "aula",
-        reservationCategory: "aula",
-        isReservable: true,
-        assignmentTarget: { type: "eina", targets: [] },
-        maxUsagePercentage: 80,
-        customSchedule: {
-            weekdays: { open: "", close: "" },
-            saturday: { open: "", close: "" },
-            sunday: { open: "", close: "" },
-        },
-    });*/
 
     const handleInputChange = (e) => {
         const { name, value, checked } = e.target;
@@ -54,7 +41,27 @@ const CustomPopup = ({ show, onHide, initialData }) => {
     const handleModify = () => {
         // AQUI LÓGICA DEL BACKEND PARA MODIFICAR DATOS
         console.log("Modificando espacio con datos:", spaceData);
+        
+        if (onUpdate) {
+            onUpdate(spaceData);
+        }
+        
         setEditMode(false);
+    };
+
+    const handleReservationSubmit = () => {
+        // Harcodeado un error de validación
+        setReservationError("Debe seleccionar una fecha y hora válida.");
+        
+        // Caso en el que no hay error (demomento comentado)
+        // setIsReserving(false);
+        // onHide();
+    };
+
+    const resetPopupState = () => {
+        setEditMode(false);
+        setIsReserving(false);
+        setReservationError("");
     };
 
     return (
@@ -62,9 +69,7 @@ const CustomPopup = ({ show, onHide, initialData }) => {
             show={show}
             onHide={() => {
                 onHide();
-                setEditMode(false);
-                setIsReserving(false);
-                setReservationError("");
+                resetPopupState();
             }}
             centered
             dialogClassName="custom-modal"
@@ -78,9 +83,7 @@ const CustomPopup = ({ show, onHide, initialData }) => {
                         className="btn-close" 
                         onClick={() => {
                             onHide();
-                            setEditMode(false);
-                            setIsReserving(false);
-                            setReservationError("");
+                            resetPopupState();
                         }}
                         aria-label="Close"
                     ></button>
@@ -333,8 +336,6 @@ const CustomPopup = ({ show, onHide, initialData }) => {
                           + Añadir otro espacio a la reserva
                         </Button>
                       </div>
-                  
-                      
                     </Form>
                   ) : (
                     // En el caso de que no se este editando se muestra la info del espacio
@@ -428,13 +429,7 @@ const CustomPopup = ({ show, onHide, initialData }) => {
                 {isReserving && (
                     <Button
                         variant="outline-light"
-                        onClick={() => {
-                            // Harcodeado un error de validación
-                            setReservationError("Debe seleccionar una fecha y hora válida.");
-                            // Casp en el que no hay error (demomento comentado)
-                            // setIsReserving(false);
-                            // onHide();
-                        }}
+                        onClick={handleReservationSubmit}
                         style={buttonStyle}
                     >
                         Finalizar reserva

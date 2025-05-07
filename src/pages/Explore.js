@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "leaflet/dist/leaflet.css";
 import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
-import { MapContainer, TileLayer, useMapEvent } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { FiRefreshCw } from "react-icons/fi";
 import CustomNavbar from '../components/CustomNavbar';
 import ReservationPopup from '../components/ReservationPopup';
-import { GeoJSON, Popup } from 'react-leaflet';
 
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
@@ -16,16 +15,6 @@ const Explore = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [features, setFeatures] = useState([]);
     const [selectedSpace, setSelectedSpace] = useState(null);
-
-
-    const MapClickHandler = () => {
-        useMapEvent('click', () => {
-            setSelectedSpace(null); 
-            setShowPopup(false);
-        });
-        return null;
-    };
-    
     
     useEffect(() => {
         fetch("https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items?limit=300&floor=0")
@@ -37,6 +26,11 @@ const Explore = () => {
             .catch(err => console.error("Error fetching geojson:", err));
     }, []);
 
+    const handleSpaceUpdate = (updatedSpaceData) => {
+        setSelectedSpace(updatedSpaceData);
+        
+        console.log("Space data updated:", updatedSpaceData);
+    };
     
     return (
         <div className="App d-flex flex-column vh-100">
@@ -45,7 +39,7 @@ const Explore = () => {
                 <Row className="h-100">
                     {/* Panel lateral */}
                     <Col lg={4} className="d-flex flex-column py-4 px-4 order-0 order-lg-0">
-                        <Card className="flex-grow-1 p-3"
+                        <Card className="flex-grow-1 p-2"
                             style={{
                                 overflowY: 'auto',
                                 border: '1px solid #ddd',
@@ -184,7 +178,6 @@ const Explore = () => {
                                 maxBoundsViscosity={1.0}
                                 style={{ width: "100%", height: "100%" }}
                             >
-                            <MapClickHandler />
                                 <TileLayer 
                                     //light_all: Estilo claro con todas las etiquetas
                                     //rastertiles/voyager_nolabels: Estilo Voyager sin etiquetas
@@ -199,8 +192,6 @@ const Explore = () => {
                                             features: features
                                         }}
                                         onEachFeature={(feature, layer) => {
-                                            const nombre = feature.properties?.nombre || "Espacio sin nombre";
-                                        
                                             layer.on('click', () => {
                                                 setSelectedSpace({
                                                     name: feature.properties.nombre,
@@ -223,7 +214,6 @@ const Explore = () => {
                                                 setShowPopup(true);
                                             });
                                         
-                                            layer.bindPopup(`<b>${nombre}</b><br/>Planta: ${feature.properties?.floor}`);
                                         }}
                                         
                                         style={() => ({
@@ -257,6 +247,7 @@ const Explore = () => {
                     show={showPopup}
                     onHide={() => setShowPopup(false)}
                     initialData={selectedSpace}
+                    onUpdate={handleSpaceUpdate}
                 />
             )}
 
