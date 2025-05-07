@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import '../css/CustomPopup.css';
 
-const CustomPopup = ({ show, onHide }) => {
+const CustomPopup = ({ show, onHide, initialData }) => {
     const userRole = sessionStorage.getItem("userRole");
     const [editMode, setEditMode] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
     const [reservationError, setReservationError] = useState("");
+    const [spaceData, setSpaceData] = useState(initialData);
 
     const buttonStyle = {
         backgroundColor: '#000842',
@@ -17,7 +18,7 @@ const CustomPopup = ({ show, onHide }) => {
     };
 
     // Información del espacio - DEMOMENTO HARDCODEADA
-    const [spaceData, setSpaceData] = useState({
+    /*const [spaceData, setSpaceData] = useState({
         name: "Espacio X",
         floor: 2,
         capacity: 30,
@@ -31,7 +32,7 @@ const CustomPopup = ({ show, onHide }) => {
             saturday: { open: "", close: "" },
             sunday: { open: "", close: "" },
         },
-    });
+    });*/
 
     const handleInputChange = (e) => {
         const { name, value, checked } = e.target;

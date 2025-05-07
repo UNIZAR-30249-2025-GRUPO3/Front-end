@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "leaflet/dist/leaflet.css";
 import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
@@ -6,20 +6,38 @@ import { MapContainer, TileLayer, useMapEvent } from 'react-leaflet';
 import { FiRefreshCw } from "react-icons/fi";
 import CustomNavbar from '../components/CustomNavbar';
 import ReservationPopup from '../components/ReservationPopup';
+import { GeoJSON, Popup } from 'react-leaflet';
+
 
 const categoriaReserva = ["aula", "seminario", "laboratorio", "despacho", "sala común"];
 
 const Explore = () => {
 
     const [showPopup, setShowPopup] = useState(false);
+    const [features, setFeatures] = useState([]);
+    const [selectedSpace, setSelectedSpace] = useState(null);
+
 
     const MapClickHandler = () => {
         useMapEvent('click', () => {
-            setShowPopup(true);
+            setSelectedSpace(null); 
+            setShowPopup(false);
         });
         return null;
     };
+    
+    
+    useEffect(() => {
+        fetch("https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items?limit=300&floor=0")
+            .then(res => res.json())
+            .then(data => {
+                console.log(data.features);
+                setFeatures(data.features);
+            })
+            .catch(err => console.error("Error fetching geojson:", err));
+    }, []);
 
+    
     return (
         <div className="App d-flex flex-column vh-100">
             <CustomNavbar />
@@ -166,7 +184,7 @@ const Explore = () => {
                                 maxBoundsViscosity={1.0}
                                 style={{ width: "100%", height: "100%" }}
                             >
-                                <MapClickHandler />
+                            <MapClickHandler />
                                 <TileLayer 
                                     //light_all: Estilo claro con todas las etiquetas
                                     //rastertiles/voyager_nolabels: Estilo Voyager sin etiquetas
@@ -174,7 +192,48 @@ const Explore = () => {
                                     maxZoom={20}
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
                                 />
-                                
+                                {features.length > 0 && (
+                                <GeoJSON 
+                                        data={{
+                                            type: "FeatureCollection",
+                                            features: features
+                                        }}
+                                        onEachFeature={(feature, layer) => {
+                                            const nombre = feature.properties?.nombre || "Espacio sin nombre";
+                                        
+                                            layer.on('click', () => {
+                                                setSelectedSpace({
+                                                    name: feature.properties.nombre,
+                                                    floor: feature.properties.floor,
+                                                    capacity: feature.properties.capacity,
+                                                    spaceType: feature.properties.spaceType,
+                                                    reservationCategory: feature.properties.reservation_category,
+                                                    isReservable: feature.properties.is_reservable,
+                                                    assignmentTarget: feature.properties.assignment_targets 
+                                                        ? feature.properties.assignment_targets 
+                                                        : { type: feature.properties.assignment_type || "eina", targets: [] },
+                                                    maxUsagePercentage: feature.properties.max_usage_percentage ?? 100,
+                                                    customSchedule: feature.properties.custom_schedule ?? {
+                                                        weekdays: { open: "", close: "" },
+                                                        saturday: { open: "", close: "" },
+                                                        sunday: { open: "", close: "" }
+                                                    }
+                                                });
+                                        
+                                                setShowPopup(true);
+                                            });
+                                        
+                                            layer.bindPopup(`<b>${nombre}</b><br/>Planta: ${feature.properties?.floor}`);
+                                        }}
+                                        
+                                        style={() => ({
+                                            color: "black",
+                                            weight: 2,
+                                            fillColor: "#007bff",
+                                            fillOpacity: 0.4
+                                        })}
+                                    />
+                                )}
                                 {/*<TileLayer 
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                     maxZoom={20}
@@ -193,7 +252,14 @@ const Explore = () => {
                 </Row>
             </Container>
 
-            <ReservationPopup show={showPopup} onHide={() => setShowPopup(false)} />
+            {selectedSpace && (
+                <ReservationPopup 
+                    show={showPopup}
+                    onHide={() => setShowPopup(false)}
+                    initialData={selectedSpace}
+                />
+            )}
+
         </div>
     );
 };
