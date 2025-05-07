@@ -12,6 +12,7 @@ const Reservations = () => {
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showMyReservations, setShowMyReservations] = useState(true);
+    const [showActiveReservations, setShowActiveReservations] = useState(false);
 
     const userRole = sessionStorage.getItem("userRole");
 
@@ -112,7 +113,7 @@ const Reservations = () => {
             category: "aula",
             usageType: "docencia",
             maxAttendees: 25,
-            startTime: new Date("2025-04-27T12:00:00"),
+            startTime: new Date("2025-05-10T12:00:00"),
             duration: 90,
             invalid: false,
         },
@@ -121,6 +122,9 @@ const Reservations = () => {
     data.forEach(reservation => {
         reservation.endTime = new Date(reservation.startTime.getTime() + reservation.duration * 60000);
     });
+
+    const now = new Date();
+    const activeReservations = data.filter(reservation => reservation.endTime > now);
 
     const handleCancelClick = (user) => {
         setSelectedReservation(user);
@@ -144,9 +148,19 @@ const Reservations = () => {
 
     const toggleMyReservations = () => {
         setShowMyReservations(!showMyReservations);
+        setShowActiveReservations(false); 
     };
 
-    const totalPages = Math.ceil(data.length / reservationsPerPage);
+    const showOnlyActiveReservations = () => {
+        setShowActiveReservations(!showActiveReservations);
+        setCurrentPage(1);
+    };
+
+
+
+    const displayedData = showActiveReservations ? activeReservations : data;
+
+    const totalPages = Math.ceil(displayedData.length / reservationsPerPage);
 
     const paginate = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -156,7 +170,7 @@ const Reservations = () => {
 
     const indexOfLastReservatio = currentPage * reservationsPerPage;
     const indexOfFirstReservatio = indexOfLastReservatio - reservationsPerPage;
-    const currentReservatios = data.slice(indexOfFirstReservatio, indexOfLastReservatio);
+    const currentReservatios = displayedData.slice(indexOfFirstReservatio, indexOfLastReservatio);
 
     return (
         <div className="App position-relative d-flex flex-column" style={{ height: '100vh' }}>
@@ -173,8 +187,12 @@ const Reservations = () => {
                         <div>
                             <h2 className="mb-1 text-center">
                                 {showMyReservations ? "Mis reservas" : "Todas las reservas"}
+                                {showActiveReservations && " (Activas)"}
                             </h2> 
-                            <p className="text-muted text-start">Tienes {data.length} reservas</p> 
+                            <p className="text-muted text-start">
+                                Tienes {displayedData.length} {displayedData.length === 1 ? 'reserva' : 'reservas'}
+                                {showActiveReservations ? ' activa' + (displayedData.length === 1 ? '' : 's') : ''}
+                            </p>
                         </div>
                     </Col>
                 </Row>
@@ -267,7 +285,21 @@ const Reservations = () => {
                         
                         <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         
-                        <div className="d-flex justify-content-center justify-content-md-end" style={{ width: "225px" }}>
+                        <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
+                            <Button
+                                onClick={showOnlyActiveReservations }
+                                style={{
+                                    borderRadius: "30px",
+                                    backgroundColor: showActiveReservations ? "#0056b3" : "#000842",
+                                    borderColor: showActiveReservations ? "#0056b3" : "#000842",
+                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                    transition: "all 0.3s ease",
+                                    letterSpacing: "0.5px",
+                                    fontSize: "1rem",
+                                }}
+                            >
+                            Ver resevas activas
+                            </Button>
                             {userRole === 'gerente' && (
                                 <Button
                                 onClick={toggleMyReservations}
