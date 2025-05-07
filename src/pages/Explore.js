@@ -25,6 +25,39 @@ const Explore = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [features, setFeatures] = useState([]);
     const [selectedSpace, setSelectedSpace] = useState(null);
+    const [filteredFeatures, setFilteredFeatures] = useState([]);
+
+    const [filters, setFilters] = useState({
+        identificador: "",
+        categoria: "",
+        planta: "0",
+        ocupantes: ""
+    });
+
+    const handleSearch = () => {
+        const filtered = features.filter(feature => {
+        const props = feature.properties;
+
+        return (
+            (filters.identificador === "" || props.nombre.toLowerCase().includes(filters.identificador.toLowerCase())) &&
+            (filters.categoria === "" || props.reservation_category === filters.categoria) &&
+            (filters.planta === "0" || props.floor?.toString() === filters.planta) &&
+            (filters.ocupantes === "" || (props.capacity ?? 0) >= parseInt(filters.ocupantes))
+        );
+        });
+
+        setFilteredFeatures(filtered);
+    };
+
+    const handleReset = () => {
+        setFilters({
+            identificador: "",
+            categoria: "",
+            planta: "",
+            ocupantes: ""
+        });
+        setFilteredFeatures([]);
+    };
     
     useEffect(() => {
         fetch("https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items?limit=300&floor=0")
@@ -88,9 +121,11 @@ const Explore = () => {
                                         <Form.Group className="mb-3" controlId="formIdentificador">
                                             <Form.Label className="text-start d-block">Identificador</Form.Label>
                                             <Form.Control 
-                                            type="text" 
-                                            placeholder="Introduce el identificador" 
-                                            className="bg-transparent shadow-sm"
+                                                type="text" 
+                                                placeholder="Introduce el identificador" 
+                                                className="bg-transparent shadow-sm"
+                                                value={filters.identificador}
+                                                onChange={(e) => setFilters({ ...filters, identificador: e.target.value })}
                                             />
                                         </Form.Group>
 
@@ -100,11 +135,13 @@ const Explore = () => {
                                             <Form.Select 
                                                 aria-label="Selector de categorías de reserva"
                                                 className="bg-transparent shadow-sm"
+                                                value={filters.categoria}
+                                                onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}
                                             >
-                                            <option style={{ fontWeight: 'bold' }}>Selecciona categoría</option>
-                                            {categoriaReserva.map((categoria, index) => (
-                                                <option key={index} value={categoria}>{categoria}</option>
-                                            ))}
+                                                <option value="">Selecciona categoría</option>
+                                                {categoriaReserva.map((categoria, index) => (
+                                                    <option key={index} value={categoria}>{categoria}</option>
+                                                ))}
                                             </Form.Select>
                                         </Form.Group>
 
@@ -114,6 +151,8 @@ const Explore = () => {
                                             <Form.Select 
                                                 aria-label="Selector de planta"
                                                 className="bg-transparent shadow-sm"
+                                                value={filters.planta}
+                                                onChange={(e) => setFilters({ ...filters, planta: e.target.value })}
                                             >
                                                 {[0, 1, 2, 3, 4].map((planta) => (
                                                     <option key={planta} value={planta}>{planta}</option>
@@ -125,10 +164,12 @@ const Explore = () => {
                                         <Form.Group className="mb-3" controlId="formOcupantes">
                                             <Form.Label className="text-start d-block">Ocupantes máximos</Form.Label>
                                             <Form.Control 
-                                            type="number" 
-                                            min="1" 
-                                            placeholder="Introduce nº de ocupantes"
-                                            className="bg-transparent shadow-sm"
+                                                type="number" 
+                                                min="1" 
+                                                placeholder="Introduce nº de ocupantes"
+                                                className="bg-transparent shadow-sm"
+                                                value={filters.ocupantes}
+                                                onChange={(e) => setFilters({ ...filters, ocupantes: e.target.value })}
                                             />
                                         </Form.Group>
 
@@ -143,7 +184,7 @@ const Explore = () => {
                                         <div className="w-100 d-flex justify-content-center">
                                             <Button 
                                             variant="outline-light" 
-                                            onClick={() => {}} 
+                                            onClick={handleSearch} 
                                             style={{ 
                                                 backgroundColor: '#000842', 
                                                 color: 'white', 
@@ -161,7 +202,7 @@ const Explore = () => {
                                         <div className="position-absolute" style={{ right: '0' }}>
                                             <Button 
                                             variant="outline-light" 
-                                            onClick={() => {}} 
+                                            onClick={handleReset} 
                                             style={{ 
                                                 backgroundColor: '#000842', 
                                                 color: 'white', 
