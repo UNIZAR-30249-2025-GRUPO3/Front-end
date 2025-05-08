@@ -286,7 +286,7 @@ const Reservations = () => {
                         <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         
                         <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
-                            <Button
+                        {userRole === 'gerente' && (<Button
                                 onClick={showOnlyActiveReservations }
                                 style={{
                                     borderRadius: "30px",
@@ -299,7 +299,7 @@ const Reservations = () => {
                                 }}
                             >
                             Ver resevas activas
-                            </Button>
+                            </Button>)}
                             {userRole === 'gerente' && (
                                 <Button
                                 onClick={toggleMyReservations}
