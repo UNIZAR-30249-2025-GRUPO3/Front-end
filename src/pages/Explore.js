@@ -40,7 +40,7 @@ const Explore = () => {
 
     // Construye la URL de la API con los filtros aplicados
     const buildApiUrl = (customFilters = filters) => {
-        const baseUrl = "https://cors-anywhere.herokuapp.com/https://pygeoapi.onrender.com/collections/espacios_geograficos/items";
+        const baseUrl = "https://pygeoapi.onrender.com/collections/espacios_geograficos/items";
         
         let params = new URLSearchParams();
         params.append("limit", "300");
