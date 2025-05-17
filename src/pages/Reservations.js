@@ -281,42 +281,47 @@ const Reservations = () => {
                 </div>
                 <div className="pt-4 pb-2">
                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                        <div className="d-none d-md-block" style={{width: "225px"}}></div>
-                        
-                        <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
-                        
-                        <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
-                        {userRole === 'gerente' && (<Button
-                                onClick={showOnlyActiveReservations }
-                                style={{
-                                    borderRadius: "30px",
-                                    backgroundColor: showActiveReservations ? "#0056b3" : "#000842",
-                                    borderColor: showActiveReservations ? "#0056b3" : "#000842",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                                    transition: "all 0.3s ease",
-                                    letterSpacing: "0.5px",
-                                    fontSize: "1rem",
-                                }}
-                            >
-                            Ver resevas activas
-                            </Button>)}
-                            {userRole === 'gerente' && (
+                        {userRole === 'gerente' && (
+                            <div className="d-flex justify-content-center justify-content-md-start gap-2" style={{ width: "370px" }}>
                                 <Button
-                                onClick={toggleMyReservations}
-                                style={{
-                                    borderRadius: "30px",
-                                    backgroundColor: "#000842",
-                                    borderColor: "#000842",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                                    transition: "all 0.3s ease",
-                                    letterSpacing: "0.5px",
-                                    fontSize: "1rem",
-                                }}
+                                    onClick={showOnlyActiveReservations}
+                                    style={{
+                                        borderRadius: "30px",
+                                        backgroundColor: showActiveReservations ? "#0056b3" : "#000842",
+                                        borderColor: showActiveReservations ? "#0056b3" : "#000842",
+                                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                        transition: "all 0.3s ease",
+                                        letterSpacing: "0.5px",
+                                        fontSize: "1rem",
+                                    }}
                                 >
-                                {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
+                                    Ver reservas activas
                                 </Button>
-                            )}
+                            </div>
+                        )}
+
+                        <div className="d-flex justify-content-center">
+                            <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         </div>
+
+                        {userRole === 'gerente' && (
+                            <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
+                                <Button
+                                    onClick={toggleMyReservations}
+                                    style={{
+                                        borderRadius: "30px",
+                                        backgroundColor: "#000842",
+                                        borderColor: "#000842",
+                                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                        transition: "all 0.3s ease",
+                                        letterSpacing: "0.5px",
+                                        fontSize: "1rem",
+                                    }}
+                                >
+                                    {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Container>

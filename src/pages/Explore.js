@@ -391,20 +391,18 @@ const Explore = () => {
                                     zIndex: 1000
                                 }}>
                                     <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
-                                        {Object.entries(spaceTypeColors).map(([type, color]) =>
-                                            type !== "default" && (
-                                                <li key={type} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                                                    <div style={{
-                                                        width: '12px',
-                                                        height: '12px',
-                                                        backgroundColor: color,
-                                                        marginRight: '6px',
-                                                        border: '1px solid #000'
-                                                    }}></div>
-                                                    <span>{type}</span>
-                                                </li>
-                                            )
-                                        )}
+                                        {Object.entries(spaceTypeColors).map(([type, color]) => (
+                                            <li key={type} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                                                <div style={{
+                                                    width: '12px',
+                                                    height: '12px',
+                                                    backgroundColor: color,
+                                                    marginRight: '6px',
+                                                    border: '1px solid #000'
+                                                }}></div>
+                                                <span>{type === "default" ? "otros" : type}</span>
+                                            </li>
+                                        ))}
                                     </ul>
                                 </div>
                                 <TileLayer 
