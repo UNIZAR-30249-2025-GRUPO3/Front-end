@@ -14,19 +14,23 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
     const [isReserving, setIsReserving] = useState(false);
     const [reservationError, setReservationError] = useState("");
     const [spaceData, setSpaceData] = useState(initialData);
+    const [originalData, setOriginalData] = useState({});
     const [updateError, setUpdateError] = useState("");
     const [validationErrors, setValidationErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
     
     useEffect(() => {
-        setSpaceData({
+        const formattedData = {
             ...initialData,
             reservationCategory: initialData.reservationCategory === null
                 ? ""
                 : typeof initialData.reservationCategory === 'object'
                     ? initialData.reservationCategory.name
                     : initialData.reservationCategory
-        });
+        };
+        
+        setSpaceData(formattedData);
+        setOriginalData(formattedData);
     }, [initialData]);
 
     const buttonStyle = {
@@ -54,17 +58,50 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
         }
     };
 
+    const isEqual = (obj1, obj2) => {
+        if (typeof obj1 !== typeof obj2) return false;
+        
+        if (typeof obj1 !== 'object' || obj1 === null || obj2 === null) {
+            return obj1 === obj2;
+        }
+        
+        if (Array.isArray(obj1) && Array.isArray(obj2)) {
+            if (obj1.length !== obj2.length) return false;
+            return obj1.every((val, idx) => isEqual(val, obj2[idx]));
+        }
+        
+        const keys1 = Object.keys(obj1);
+        const keys2 = Object.keys(obj2);
+        
+        if (keys1.length !== keys2.length) return false;
+        
+        return keys1.every(key => {
+            if (!obj2.hasOwnProperty(key)) return false;
+            return isEqual(obj1[key], obj2[key]);
+        });
+    };
+
     const prepareUpdateData = () => {
-        return {
-            reservationCategory: spaceData.reservationCategory,
-            assignmentTarget: {
-                type: spaceData.assignmentTarget.type,
-                targets: spaceData.assignmentTarget.targets
-            },
-            maxUsagePercentage: spaceData.maxUsagePercentage,
-            customSchedule: spaceData.customSchedule,
-            isReservable: spaceData.isReservable
+        const updateData = {};
+       
+        updateData.reservationCategory = spaceData.reservationCategory;
+    
+        updateData.assignmentTarget = {
+            type: spaceData.assignmentTarget.type,
+            targets: spaceData.assignmentTarget.targets
         };
+
+        if (spaceData.maxUsagePercentage !== originalData.maxUsagePercentage) {
+            updateData.maxUsagePercentage = spaceData.maxUsagePercentage;
+        }
+        
+        if (!isEqual(spaceData.customSchedule, originalData.customSchedule)) {
+            updateData.customSchedule = spaceData.customSchedule;
+        }
+        
+        updateData.isReservable = spaceData.isReservable;
+        
+        return updateData;
     };
 
     const handleModify = async () => {
