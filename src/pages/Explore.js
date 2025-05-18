@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import { FiRefreshCw } from "react-icons/fi";
+import { useAuth } from '../authContext';
 import CustomNavbar from '../components/CustomNavbar';
 import ReservationPopup from '../components/ReservationPopup';
 import axios from 'axios';
@@ -23,6 +24,8 @@ const spaceTypeColors = {
 };
 
 const Explore = () => {
+
+    const { isAuthenticated, isTokenExpired } = useAuth();
 
     const [showPopup, setShowPopup] = useState(false);
     const [features, setFeatures] = useState([]);
@@ -54,6 +57,14 @@ const Explore = () => {
         }
                 
         return `${baseUrl}?${params.toString()}`;
+    };
+
+    const checkTokenBeforeRequest = () => {
+        if (isAuthenticated && isTokenExpired()) {
+            setError("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+            return false;
+        }
+        return true;
     };
 
     const fetchSpaces = async (customFilters = filters) => {
@@ -125,6 +136,11 @@ const Explore = () => {
         try {
             console.log("Obteniendo detalles del espacio:", spaceId);
 
+            if (!checkTokenBeforeRequest()) {
+                setLoadingSpaceDetails(false);
+                return;
+            }
+            
             const response = await axios.get(`${API_URL}/api/spaces/${spaceId}`);
             
             const spaceData = response.data;
@@ -187,9 +203,13 @@ const Explore = () => {
         }
     };
 
-    const handleSpaceUpdate = (updatedSpaceData) => {
-        setSelectedSpace(updatedSpaceData);
+    const handleSpaceUpdate = async (updatedSpaceData) => {
+
+        if (!checkTokenBeforeRequest()) {
+            return;
+        }
         
+        setSelectedSpace(updatedSpaceData);
         console.log("Space data updated:", updatedSpaceData);
     };
     

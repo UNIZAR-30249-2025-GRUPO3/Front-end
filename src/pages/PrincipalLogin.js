@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../authContext';
@@ -14,9 +14,15 @@ function PrincipalLogin() {
   const [loginError, setLoginError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
-
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/explorar');
+    }
+  }, [isAuthenticated, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -64,8 +70,10 @@ function PrincipalLogin() {
           setLoginError('Este email no está registrado en el sistema');
         } else if (errorMsg.includes('Contraseña incorrecta')) {
           setLoginError('Contraseña incorrecta. Inténtalo de nuevo');
-        } else if (errorMsg.includes('No hay sesión activa')) {
+        } else if (errorMsg.includes('No tienes sesión activa')) {
           setLoginError('La sesión ha caducado. Por favor, inicia sesión nuevamente');
+        } else if (errorMsg.includes('Token inválido o expirado')) {
+          setLoginError('Tu sesión ha expirado. Por favor, inicia sesión nuevamente');
         } else {
           setLoginError(errorMsg || 'Error al iniciar sesión. Verifica tus credenciales.');
         }

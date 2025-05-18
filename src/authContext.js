@@ -4,22 +4,48 @@ import axios from 'axios';
 const API_URL = 'https://back-end-sv3z.onrender.com';
 const AuthContext = createContext();
 
+// Configurar axios para incluir el token en todas las solicitudes
+const setupAxiosInterceptors = (token) => {
+  axios.interceptors.request.use(
+    (config) => {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+};
+
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Se verifica el estado de autenticación al cargar la aplicación
   useEffect(() => {
     const checkAuthStatus = () => {
-      const storedAuth = sessionStorage.getItem('isAuthenticated') === 'true';
-      const storedRole = sessionStorage.getItem('userRole');
-      const storedUserId = sessionStorage.getItem('userId');
+      const storedToken = localStorage.getItem('authToken');
+      const storedRole = localStorage.getItem('userRole');
+      const storedUserId = localStorage.getItem('userId');
       
-      setIsAuthenticated(storedAuth);
-      setUserRole(storedRole || null);
-      setUserId(storedUserId || null);
+      if (storedToken) {
+        setAuthToken(storedToken);
+        setIsAuthenticated(true);
+        setUserRole(storedRole || null);
+        setUserId(storedUserId || null);
+        
+        setupAxiosInterceptors(storedToken);
+      } else {
+        setIsAuthenticated(false);
+        setUserRole(null);
+        setUserId(null);
+      }
+      
       setIsLoading(false);
     };
     
@@ -32,19 +58,24 @@ export function AuthProvider({ children }) {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password
-      }, {
-        withCredentials: true
       });
 
-      if (response.data && response.data.user) {
+      if (response.data && response.data.token) {
+        const token = response.data.token;
+        const user = response.data.user;
 
-        sessionStorage.setItem('isAuthenticated', 'true');
-        sessionStorage.setItem('userRole', response.data.user.role[0]);
-        sessionStorage.setItem('userId', response.data.user.user_id);
+        // Guardar token y datos de usuario en localStorage
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userRole', user.role[0]);
+        localStorage.setItem('userId', user.user_id);
         
+        // Actualizar estado
+        setAuthToken(token);
         setIsAuthenticated(true);
-        setUserRole(response.data.user.role[0]);
-        setUserId(response.data.user.user_id);
+        setUserRole(user.role[0]);
+        setUserId(user.user_id);
+        
+        setupAxiosInterceptors(token);
         
         return { success: true };
       }
@@ -70,24 +101,38 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       setIsLoading(true);
-      await axios.get(`${API_URL}/api/auth/logout`, {
-        withCredentials: true
-      });
-
     } catch (error) {
-
       console.error('Error durante el logout:', error);
     } finally {
-
-      // Se limpian datos de sesión incluso si la llamada API falla
-      sessionStorage.removeItem('isAuthenticated');
-      sessionStorage.removeItem('userRole');
-      sessionStorage.removeItem('userId');
+      // Limpiar datos de autenticación
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
       
+      setAuthToken(null);
       setIsAuthenticated(false);
       setUserRole(null);
       setUserId(null);
       setIsLoading(false);
+    }
+  };
+
+  // Función para comprobar si el token ha expirado
+  const isTokenExpired = () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return true;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Comprobar si el token ha expirado
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        logout();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Error al verificar la expiración del token:', e);
+      return true;
     }
   };
 
@@ -96,9 +141,11 @@ export function AuthProvider({ children }) {
       isAuthenticated, 
       userRole, 
       userId, 
+      authToken,
       login, 
-      logout, 
-      isLoading 
+      logout,
+      isLoading,
+      isTokenExpired
     }}>
       {children}
     </AuthContext.Provider>

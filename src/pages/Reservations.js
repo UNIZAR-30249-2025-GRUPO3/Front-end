@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FiCalendar, FiTrash2, FiCheck } from 'react-icons/fi';
+import { useAuth } from '../authContext';
 import CustomNavbar from '../components/CustomNavbar';
 import CustomModal from '../components/CustomModal';
 import Pagination from "../components/CustomPagination";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Reservations = () => {
+
+    const { userRole } = useAuth();
+
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showMyReservations, setShowMyReservations] = useState(true);
     const [showActiveReservations, setShowActiveReservations] = useState(false);
-
-    const userRole = sessionStorage.getItem("userRole");
 
     const reservationsPerPage = 5;
 
