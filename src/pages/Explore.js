@@ -214,7 +214,7 @@ const Explore = () => {
     };
     
     const getSpaceColor = (feature) => {
-        const spaceType = feature.properties.reservation_category || feature.properties.spaceType || "default";
+        const spaceType = feature.properties.spaceType || "default";
         return spaceTypeColors[spaceType.toLowerCase()] || spaceTypeColors.default;
     };
     

@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { useAuth } from '../authContext';
+import axios from 'axios';
 import '../css/CustomPopup.css';
 
+const API_URL = 'https://back-end-sv3z.onrender.com';
+
 const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
-    const userRole = sessionStorage.getItem("userRole");
+
+    const { userRole, isAuthenticated, authToken, isTokenExpired } = useAuth();
+
     const [editMode, setEditMode] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
     const [reservationError, setReservationError] = useState("");
     const [spaceData, setSpaceData] = useState(initialData);
+    const [updateError, setUpdateError] = useState("");
+    const [validationErrors, setValidationErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
     
     useEffect(() => {
-        setSpaceData(initialData);
+        setSpaceData({
+            ...initialData,
+            reservationCategory: initialData.reservationCategory === null
+                ? ""
+                : typeof initialData.reservationCategory === 'object'
+                    ? initialData.reservationCategory.name
+                    : initialData.reservationCategory
+        });
     }, [initialData]);
 
     const buttonStyle = {
@@ -38,15 +54,91 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
         }
     };
 
-    const handleModify = () => {
-        // AQUI LÓGICA DEL BACKEND PARA MODIFICAR DATOS
-        console.log("Modificando espacio con datos:", spaceData);
-        
-        if (onUpdate) {
-            onUpdate(spaceData);
+    const prepareUpdateData = () => {
+        return {
+            reservationCategory: spaceData.reservationCategory,
+            assignmentTarget: {
+                type: spaceData.assignmentTarget.type,
+                targets: spaceData.assignmentTarget.targets
+            },
+            maxUsagePercentage: spaceData.maxUsagePercentage,
+            customSchedule: spaceData.customSchedule,
+            isReservable: spaceData.isReservable
+        };
+    };
+
+    const handleModify = async () => {
+        setUpdateError("");
+        setIsLoading(true);
+        setValidationErrors({});
+
+        const errors = {};
+        if (spaceData.isReservable && !spaceData.reservationCategory) {
+            errors.reservationCategory = "Debe seleccionar una categoría de reserva si el espacio es reservable";
         }
         
-        setEditMode(false);
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            setIsLoading(false);
+            return;
+        }
+            
+        try {
+            if (!isAuthenticated || !authToken) {
+                throw new Error("No hay sesión activa. Por favor, inicie sesión nuevamente.");
+            }
+            
+            if (isTokenExpired()) {
+                throw new Error("Su sesión ha expirado. Por favor, inicie sesión nuevamente.");
+            }
+            
+            const updateData = prepareUpdateData();
+
+            const response = await axios.put(
+                `${API_URL}/api/spaces/${spaceData.id}`,
+                updateData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                }
+            );
+            
+            console.log("Espacio actualizado exitosamente:", response.data);
+
+            response.data = {
+                ...response.data,
+                creId: spaceData.creId
+            }
+            
+            if (onUpdate) {
+                onUpdate(response.data);
+            }
+            
+            setEditMode(false);
+            
+        } catch (error) {
+            console.error("Error al actualizar el espacio:", error);
+            
+            // Se muestran los mensajes de error específicos
+            if (error.response) {
+                // Error de respuesta del servidor
+                if (error.response.status === 401) {
+                    setUpdateError("Sesión no válida o expirada. Por favor, inicie sesión nuevamente.");
+                } else if (error.response.status === 403) {
+                    setUpdateError("No tiene permisos suficientes para realizar esta acción.");
+                } else {
+                    setUpdateError(`Error: ${error.response.status} - ${error.response.data.message || 'No se pudo actualizar el espacio'}`);
+                }
+            } else if (error.request) {
+                setUpdateError("No se pudo conectar con el servidor. Verifique su conexión a internet.");
+            } else {
+                setUpdateError(error.message);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleReservationSubmit = () => {
@@ -62,6 +154,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
         setEditMode(false);
         setIsReserving(false);
         setReservationError("");
+        setUpdateError("");
     };
 
     return (
@@ -99,23 +192,37 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
 
             {/* Contenido variable del pop up */}
             <Modal.Body className="custom-modal-body">
+                {/* Mostrar alerta de error si existe */}
+                {updateError && (
+                    <Alert variant="danger" className="mb-3">
+                        {updateError}
+                    </Alert>
+                )}
+                
                 {editMode ? (
                     // Contenido si se esta editando los datos del espacio
                     <Form>
                         {/* Campo para la categoría de reserva */}
                         <Form.Group className="mb-2">
-                            <Form.Label>Categoría de reserva</Form.Label>
+                            <Form.Label>Categoría de reserva {spaceData.isReservable && <span className="text-danger">*</span>}</Form.Label>
                             <Form.Select
                                 name="reservationCategory"
-                                value={spaceData.reservationCategory}
+                                value={spaceData.reservationCategory || ""}
                                 onChange={handleInputChange}
+                                isInvalid={validationErrors.reservationCategory}
                             >
+                                <option value="">SIN CATEGORÍA DE RESERVA</option>
                                 <option value="aula">Aula</option>
                                 <option value="seminario">Seminario</option>
                                 <option value="laboratorio">Laboratorio</option>
                                 <option value="sala común">Sala común</option>
                                 <option value="despacho">Despacho</option>
                             </Form.Select>
+                            {validationErrors.reservationCategory && (
+                                <Form.Control.Feedback type="invalid">
+                                    {validationErrors.reservationCategory}
+                                </Form.Control.Feedback>
+                            )}
                         </Form.Group>
 
                         {/* Campo para la asignación */}
@@ -158,7 +265,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                                 }
                                             })
                                         }
-                                        value={spaceData.assignmentTarget.targets[0]}
+                                        value={spaceData.assignmentTarget.targets?.[0] || ""}
                                     >
                                         <option value="informática e ingeniería de sistemas">
                                             Informática e Ingeniería de Sistemas
@@ -177,7 +284,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                     <Form.Control
                                         type="text"
                                         placeholder=""
-                                        value={spaceData.assignmentTarget.targets.join(", ")}
+                                        value={(spaceData.assignmentTarget.targets || []).join(", ")}
                                         onChange={(e) =>
                                             setSpaceData({
                                                 ...spaceData,
@@ -197,7 +304,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                             <Form.Control
                                 type="number"
                                 name="maxUsagePercentage"
-                                value={spaceData.maxUsagePercentage}
+                                value={spaceData.maxUsagePercentage ?? ""}
                                 onChange={handleInputChange}
                                 min={0}
                                 max={100}
@@ -223,7 +330,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                                     <div className="d-flex justify-content-center gap-2">
                                                         <Form.Control
                                                             type="time"
-                                                            value={spaceData.customSchedule[dayKey].open}
+                                                            value={spaceData.customSchedule[dayKey].open || ""}
                                                             onChange={(e) =>
                                                                 setSpaceData({
                                                                     ...spaceData,
@@ -240,7 +347,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                                         />
                                                         <Form.Control
                                                             type="time"
-                                                            value={spaceData.customSchedule[dayKey].close}
+                                                            value={spaceData.customSchedule[dayKey].close || ""}
                                                             onChange={(e) =>
                                                                 setSpaceData({
                                                                     ...spaceData,
@@ -347,8 +454,22 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                     <tbody>
                                         <tr><th scope="row">Planta</th><td>{spaceData.floor}ª</td></tr>
                                         <tr><th scope="row">Capacidad</th><td>{spaceData.capacity} personas</td></tr>
-                                        <tr><th scope="row">Tipo de espacio</th><td>{spaceData.spaceType}</td></tr>
-                                        <tr><th scope="row">Categoría de reserva</th><td>{spaceData.reservationCategory}</td></tr>
+                                        <tr>
+                                            <th scope="row">Categoría de reserva</th>
+                                            <td>
+                                                {
+                                                typeof spaceData.reservationCategory === 'object' && spaceData.reservationCategory !== null
+                                                    ? spaceData.reservationCategory.name
+                                                    : spaceData.reservationCategory || "Sin categoría"
+                                                }
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Tipo de espacio</th>
+                                            <td>{typeof spaceData.spaceType === 'object' 
+                                                    ? spaceData.spaceType?.name 
+                                                    : spaceData.spaceType}</td>
+                                        </tr>
                                         <tr><th scope="row">Reservable</th><td>{spaceData.isReservable ? "Sí" : "No"}</td></tr>
                                     </tbody>
                                 </table>
@@ -401,6 +522,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                 setEditMode(false);
                             }}
                             style={buttonStyle}
+                            disabled={!isAuthenticated || isTokenExpired()}
                         >
                             Reservar
                         </Button>
@@ -410,6 +532,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                 variant="outline-light"
                                 onClick={() => setEditMode(true)}
                                 style={buttonStyle}
+                                disabled={!isAuthenticated || isTokenExpired()}
                             >
                                 Cambiar info
                             </Button>
@@ -422,8 +545,9 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                         variant="outline-light"
                         onClick={handleModify}
                         style={buttonStyle}
+                        disabled={isLoading || !isAuthenticated || isTokenExpired()}
                     >
-                        Modificar info
+                        {isLoading ? 'Enviando...' : 'Modificar info'}
                     </Button>
                 )}
 
@@ -432,6 +556,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                         variant="outline-light"
                         onClick={handleReservationSubmit}
                         style={buttonStyle}
+                        disabled={isLoading || !isAuthenticated || isTokenExpired()}
                     >
                         Finalizar reserva
                     </Button>
