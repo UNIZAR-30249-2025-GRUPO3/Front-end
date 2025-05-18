@@ -246,9 +246,9 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                     onChange={(e) => {
                                         const newType = e.target.value;
                                         let newTargets = [];
-                                        if (newType === "departamento") {
+                                        if (newType === "department") {
                                             newTargets = ["informática e ingeniería de sistemas"];
-                                        } else if (newType === "persona") {
+                                        } else if (newType === "person") {
                                             newTargets = [""];
                                         }
                                         setSpaceData({
@@ -258,13 +258,13 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                     }}
                                 >
                                     <option value="eina">EINA</option>
-                                    <option value="departamento">Departamento</option>
-                                    <option value="persona">Persona</option>
+                                    <option value="department">Departamento</option>
+                                    <option value="person">Persona</option>
                                 </Form.Select>
                         </Form.Group>
 
                         {/* Si la asignación es un departamento especificar */}
-                        {spaceData.assignmentTarget.type === "departamento" && (
+                        {spaceData.assignmentTarget.type === "department" && (
                             <Form.Group className="mb-2">
                                 <Form.Label>Departamento asignado</Form.Label>
                                     <Form.Select
@@ -290,7 +290,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                         )}
 
                         {/* Si la asignación es un persona especificar */}
-                        {spaceData.assignmentTarget.type === "persona" && (
+                        {spaceData.assignmentTarget.type === "person" && (
                             <Form.Group className="mb-2">
                                 <Form.Label>ID de la persona asignada</Form.Label>
                                     <Form.Control
@@ -490,7 +490,16 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                 <table className="table table-sm table-striped table-bordered shadow-sm rounded">
                                     <tbody>
                                         <tr><th scope="row">Identificador CRE</th><td>{spaceData.creId}</td></tr>
-                                        <tr><th scope="row">Asignado a</th><td>{spaceData.assignmentTarget.type}</td></tr>
+                                        <tr>
+                                            <th scope="row">Asignado a</th>
+                                            <td>
+                                                {{
+                                                eina: "EINA",
+                                                department: "Departamento",
+                                                person: "Persona"
+                                                }[spaceData.assignmentTarget.type] || spaceData.assignmentTarget.type}
+                                            </td>
+                                        </tr>
                                         <tr><th scope="row">Uso máximo permitido</th><td>{spaceData.maxUsagePercentage}%</td></tr>
                                         <tr>
                                             <th scope="row">Horario de reservas</th>
