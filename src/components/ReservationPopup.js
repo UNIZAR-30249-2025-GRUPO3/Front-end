@@ -262,7 +262,13 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                 onChange={handleInputChange}
                                 isInvalid={validationErrors.reservationCategory}
                             >
-                                <option value="">SIN CATEGORÍA DE RESERVA</option>
+                                {(
+                                    typeof spaceData.spaceType === 'string'
+                                        ? spaceData.spaceType === 'otro'
+                                        : spaceData.spaceType?.name === 'otro'
+                                ) && (
+                                    <option value="">SIN CATEGORÍA DE RESERVA</option>
+                                )}
                                 <option value="aula">Aula</option>
                                 <option value="seminario">Seminario</option>
                                 <option value="laboratorio">Laboratorio</option>
