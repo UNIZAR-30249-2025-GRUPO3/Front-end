@@ -91,7 +91,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
             targets: spaceData.assignmentTarget.targets
         };
 
-        if (spaceData.maxUsagePercentage !== originalData.maxUsagePercentage) {
+        if (spaceData.maxUsagePercentage !== originalData.maxUsagePercentage && spaceData.maxUsagePercentage != null && !isNaN(spaceData.maxUsagePercentage)) {
             updateData.maxUsagePercentage = spaceData.maxUsagePercentage;
         }
         
@@ -146,8 +146,10 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
 
             response.data = {
                 ...response.data,
+                maxUsagePercentage: response.data.maxUsagePercentage ?? originalData.maxUsagePercentage,
+                customSchedule: response.data.customSchedule ?? originalData.customSchedule,
                 creId: spaceData.creId
-            }
+            };
             
             if (onUpdate) {
                 onUpdate(response.data);
