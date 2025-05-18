@@ -506,6 +506,12 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                         <tr><th scope="row">Planta</th><td>{spaceData.floor}ª</td></tr>
                                         <tr><th scope="row">Capacidad</th><td>{spaceData.capacity} personas</td></tr>
                                         <tr>
+                                            <th scope="row">Tipo de espacio</th>
+                                            <td>{typeof spaceData.spaceType === 'object' 
+                                                    ? spaceData.spaceType?.name 
+                                                    : spaceData.spaceType}</td>
+                                        </tr>
+                                        <tr>
                                             <th scope="row">Categoría de reserva</th>
                                             <td>
                                                 {
@@ -514,12 +520,6 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                                                     : spaceData.reservationCategory || "Sin categoría"
                                                 }
                                             </td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row">Tipo de espacio</th>
-                                            <td>{typeof spaceData.spaceType === 'object' 
-                                                    ? spaceData.spaceType?.name 
-                                                    : spaceData.spaceType}</td>
                                         </tr>
                                         <tr><th scope="row">Reservable</th><td>{spaceData.isReservable ? "Sí" : "No"}</td></tr>
                                     </tbody>
