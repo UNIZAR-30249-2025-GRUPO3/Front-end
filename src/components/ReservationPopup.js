@@ -128,13 +128,25 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                     setUpdateError("Sesión no válida o expirada. Por favor, inicie sesión nuevamente.");
                 } else if (error.response.status === 403) {
                     setUpdateError("No tiene permisos suficientes para realizar esta acción.");
+                } else if (error.response.data) {
+
+                    const serverErrorMessage = error.response.data.message || error.response.data.error;
+                    
+                    if (serverErrorMessage) {
+                        setUpdateError(`${serverErrorMessage}`);
+                    } else if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+                        const errorsList = error.response.data.errors.map(err => err.msg || err.message).join(", ");
+                        setUpdateError(`Errores de validación: ${errorsList}`);
+                    } else {
+                        setUpdateError(`Error (${error.response.status}): No se pudo actualizar el espacio`);
+                    }
                 } else {
-                    setUpdateError(`Error: ${error.response.status} - ${error.response.data.message || 'No se pudo actualizar el espacio'}`);
+                    setUpdateError(`Error ${error.response.status}: No se pudo actualizar el espacio`);
                 }
             } else if (error.request) {
                 setUpdateError("No se pudo conectar con el servidor. Verifique su conexión a internet.");
             } else {
-                setUpdateError(error.message);
+                setUpdateError(`Error inesperado: ${error.message}`);
             }
         } finally {
             setIsLoading(false);
