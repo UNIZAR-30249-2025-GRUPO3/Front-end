@@ -116,6 +116,7 @@ const Explore = () => {
 
     useEffect(() => {
         fetchSpaces();
+        // eslint-disable-next-line
     }, []);   
 
     const handleSearch = () => {
