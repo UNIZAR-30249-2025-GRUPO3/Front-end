@@ -1,10 +1,12 @@
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 
-function CustomModal({ title, bodyText, confirmButtonText, onSave, show, onHide }) {
+function CustomModal({ title, bodyText, confirmButtonText, onSave, show, onHide, onConfirm }) {
 
-    const handleSave = () => {
-        if (onSave) {
+    const handleConfirm = () => {
+        if (onConfirm) {
+            onConfirm();
+        } else if (onSave) {
             onSave();
         }
         onHide();
@@ -21,7 +23,7 @@ function CustomModal({ title, bodyText, confirmButtonText, onSave, show, onHide 
                 <Button variant="primary" style={{ backgroundColor: "#000842" }}  onClick={onHide}>
                     Volver
                 </Button>
-                <Button variant="danger" onClick={handleSave}>
+                <Button variant="danger" onClick={handleConfirm}>
                     {confirmButtonText}
                 </Button>
             </Modal.Footer>
