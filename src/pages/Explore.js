@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import "bootstrap/dist/css/bootstrap.min.css";
-import "leaflet/dist/leaflet.css";
-import { Container, Button, Card, Row, Col, Form} from 'react-bootstrap';
+import { Container, Button, Card, Row, Col, Form, Badge} from 'react-bootstrap';
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiCheckSquare, FiSquare, FiEye } from "react-icons/fi";
 import { useAuth } from '../authContext';
 import CustomNavbar from '../components/CustomNavbar';
 import ReservationPopup from '../components/ReservationPopup';
 import axios from 'axios';
+import "bootstrap/dist/css/bootstrap.min.css";
+import "leaflet/dist/leaflet.css";
 
 const API_URL = 'https://back-end-sv3z.onrender.com';
 
@@ -30,9 +30,12 @@ const Explore = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [features, setFeatures] = useState([]);
     const [selectedSpace, setSelectedSpace] = useState(null);
+    const [selectedSpaces, setSelectedSpaces] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [loadingSpaceDetails, setLoadingSpaceDetails] = useState(false);
+    const [multiSelectMode, setMultiSelectMode] = useState(false);
+    const [selectedSpaceIds, setSelectedSpaceIds] = useState(new Set());
 
     const [filters, setFilters] = useState({
         identificador: "",
@@ -129,6 +132,100 @@ const Explore = () => {
         setFilters(resetFilters);
         fetchSpaces(resetFilters);
     };
+
+    // Función para alternar el modo de selección múltiple
+    const toggleMultiSelectMode = () => {
+        setMultiSelectMode(!multiSelectMode);
+        setSelectedSpaceIds(new Set());
+    };
+
+    // Función para manejar la selección/deselección de espacios
+    const handleSpaceSelection = (spaceId) => {
+        const newSelectedIds = new Set(selectedSpaceIds);
+        if (newSelectedIds.has(spaceId)) {
+            newSelectedIds.delete(spaceId);
+        } else {
+            newSelectedIds.add(spaceId);
+        }
+        setSelectedSpaceIds(newSelectedIds);
+    };
+
+    // Función para ver los espacios seleccionados
+    const handleViewSelectedSpaces = async () => {
+        if (selectedSpaceIds.size === 0) return;
+
+        setLoadingSpaceDetails(true);
+        const spacesData = [];
+
+        try {
+            for (const spaceId of selectedSpaceIds) {
+                try {
+                    if (!checkTokenBeforeRequest()) {
+                        continue;
+                    }
+                    
+                    const response = await axios.get(`${API_URL}/api/spaces/${spaceId}`);
+                    const spaceData = response.data;
+                    
+                    const processedSpaceData = {
+                        id: spaceId,
+                        name: spaceData.name || spaceId,
+                        floor: spaceData.floor,
+                        capacity: spaceData.capacity,
+                        spaceType: typeof spaceData.spaceType === 'object' && spaceData.spaceType !== null 
+                            ? spaceData.spaceType.name 
+                            : spaceData.spaceType,
+                        reservationCategory: typeof spaceData.reservationCategory === 'object' && spaceData.reservationCategory !== null 
+                            ? spaceData.reservationCategory.name 
+                            : spaceData.reservationCategory,
+                        isReservable: spaceData.isReservable !== undefined ? spaceData.isReservable : false,
+                        creId: spaceData.idSpace || spaceId,
+                        assignmentTarget: spaceData.assignmentTarget || { type: "eina", targets: [] },
+                        maxUsagePercentage: spaceData.maxUsagePercentage !== undefined ? spaceData.maxUsagePercentage : 100,
+                        customSchedule: spaceData.customSchedule || {
+                            weekdays: { open: "", close: "" },
+                            saturday: { open: "", close: "" },
+                            sunday: { open: "", close: "" }
+                        }
+                    };
+                    
+                    spacesData.push(processedSpaceData);
+                } catch (err) {
+                    console.error(`Error al obtener detalles del espacio ${spaceId}:`, err);
+                    // Si hay un error en la API, usamos los datos básicos del GeoJSON
+                    const basicData = features.find(f => f.id === spaceId);
+                    if (basicData) {
+                        const fallbackData = {
+                            id: basicData.id,
+                            name: basicData.properties.nombre || basicData.id,
+                            floor: basicData.properties.floor,
+                            capacity: basicData.properties.capacity,
+                            spaceType: basicData.properties.spaceType,
+                            reservationCategory: basicData.properties.reservation_category,
+                            isReservable: basicData.properties.is_reservable || false,
+                            creId: basicData.id,
+                            assignmentTarget: basicData.properties.assignment_targets 
+                                ? basicData.properties.assignment_targets 
+                                : { type: basicData.properties.assignment_type || "eina", targets: [] },
+                            maxUsagePercentage: basicData.properties.max_usage_percentage ?? 100,
+                            customSchedule: basicData.properties.custom_schedule ?? {
+                                weekdays: { open: "", close: "" },
+                                saturday: { open: "", close: "" },
+                                sunday: { open: "", close: "" }
+                            }
+                        };
+                        spacesData.push(fallbackData);
+                    }
+                }
+            }
+
+            setSelectedSpaces(spacesData);
+            setSelectedSpace(null); // Limpiar espacio individual
+            setShowPopup(true);
+        } finally {
+            setLoadingSpaceDetails(false);
+        }
+    };
     
     // Función para obtener los detalles completos de un espacio por su ID
     const fetchSpaceDetails = async (spaceId) => {
@@ -169,6 +266,7 @@ const Explore = () => {
             };
             
             setSelectedSpace(processedSpaceData);
+            setSelectedSpaces([]);
             setShowPopup(true);
         } catch (err) {
             console.error("Error al obtener detalles del espacio:", err);
@@ -196,6 +294,7 @@ const Explore = () => {
                     }
                 };
                 setSelectedSpace(fallbackData);
+                setSelectedSpaces([]);
                 setShowPopup(true);
             }
         } finally {
@@ -216,6 +315,16 @@ const Explore = () => {
     const getSpaceColor = (feature) => {
         const spaceType = feature.properties.spaceType || "default";
         return spaceTypeColors[spaceType.toLowerCase()] || spaceTypeColors.default;
+    };
+
+    const getSpaceStyle = (feature) => {
+        const isSelected = selectedSpaceIds.has(feature.properties.id);
+        return {
+            color: isSelected ? "#FFD700" : "black",
+            weight: isSelected ? 4 : 2,
+            fillColor: getSpaceColor(feature),
+            fillOpacity: isSelected ? 0.8 : 0.6
+        };
     };
     
     return (
@@ -339,6 +448,15 @@ const Explore = () => {
                                     </div>
                                 )}
 
+                                {/* Modo de selección múltiple */}
+                                {multiSelectMode && selectedSpaceIds.size > 0 && (
+                                    <div className="text-center mb-2">
+                                        <Badge bg="info">
+                                            {selectedSpaceIds.size} espacio{selectedSpaceIds.size !== 1 ? 's' : ''} seleccionado{selectedSpaceIds.size !== 1 ? 's' : ''}
+                                        </Badge>
+                                    </div>
+                                )}
+
                                 {/* Botones */}
                                 <div className="w-100 d-flex align-items-center justify-content-center pb-3 mt-auto">
                                     <div className="position-relative d-flex align-items-center" style={{ width: '90%', maxWidth: '700px' }}>
@@ -425,6 +543,53 @@ const Explore = () => {
                                         ))}
                                     </ul>
                                 </div>
+
+                                {/* Botones de control*/}
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '10px',
+                                    right: '10px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '5px',
+                                    zIndex: 1000
+                                }}>
+                                    {/* Botón para alternar modo selección múltiple */}
+                                    <Button
+                                        variant={multiSelectMode ? "warning" : "primary"}
+                                        size="sm"
+                                        onClick={toggleMultiSelectMode}
+                                        style={{
+                                            backgroundColor: multiSelectMode ? '#FFC107' : '#000842',
+                                            borderColor: multiSelectMode ? '#FFC107' : '#000842',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}
+                                    >
+                                        {multiSelectMode ? <FiCheckSquare size={16} /> : <FiSquare size={16} />}
+                                        {multiSelectMode ? 'Seleccionando' : 'Seleccionar varios'}
+                                    </Button>
+
+                                    {/* Botón para ver espacios seleccionados */}
+                                    {multiSelectMode && selectedSpaceIds.size > 0 && (
+                                        <Button
+                                            variant="success"
+                                            size="sm"
+                                            onClick={handleViewSelectedSpaces}
+                                            disabled={loadingSpaceDetails}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '5px'
+                                            }}
+                                        >
+                                            <FiEye size={16} />
+                                            {loadingSpaceDetails ? 'Cargando...' : `Ver ${selectedSpaceIds.size} espacios`}
+                                        </Button>
+                                    )}
+                                </div>
+
                                 <TileLayer 
                                     url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
                                     maxZoom={20}
@@ -432,23 +597,22 @@ const Explore = () => {
                                 />
                                 {features.length > 0 && (
                                 <GeoJSON 
-                                        key={features.map(f => f.id).join('_')}
+                                        key={`${features.map(f => f.id).join('_')}_${multiSelectMode}_${Array.from(selectedSpaceIds).join('_')}`}
                                         data={{
                                             type: "FeatureCollection",
                                             features: features
                                         }}
                                         onEachFeature={(feature, layer) => {
                                             layer.on('click', () => {
-                                                fetchSpaceDetails(feature.properties.id);
+                                                if (multiSelectMode) {
+                                                    handleSpaceSelection(feature.properties.id);
+                                                } else {
+                                                    fetchSpaceDetails(feature.properties.id);
+                                                }
                                             });
                                         }}
                                         
-                                        style={(feature) => ({
-                                            color: "black",
-                                            weight: 2,
-                                            fillColor: getSpaceColor(feature),
-                                            fillOpacity: 0.6
-                                        })}
+                                        style={getSpaceStyle}
                                     />
                                 )}
                                 {/*<TileLayer 
@@ -469,11 +633,16 @@ const Explore = () => {
                 </Row>
             </Container>
 
-            {selectedSpace && (
+            {(selectedSpace || selectedSpaces.length > 0) && (
                 <ReservationPopup 
                     show={showPopup}
-                    onHide={() => setShowPopup(false)}
+                    onHide={() => {
+                        setShowPopup(false);
+                        setSelectedSpace(null);
+                        setSelectedSpaces([]);
+                    }}
                     initialData={selectedSpace}
+                    multipleSpacesData={selectedSpaces}
                     onUpdate={handleSpaceUpdate}
                     isLoading={loadingSpaceDetails}
                 />

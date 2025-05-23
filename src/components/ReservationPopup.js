@@ -6,7 +6,7 @@ import '../css/CustomPopup.css';
 
 const API_URL = 'https://back-end-sv3z.onrender.com';
 
-const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
+const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }) => {
 
     const { userRole, isAuthenticated, authToken, isTokenExpired } = useAuth();
 
@@ -19,19 +19,25 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
     const [validationErrors, setValidationErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
     
+    // Se determina si estamos en modo múltiples espacios
+    const isMultipleSpaces = multipleSpacesData && multipleSpacesData.length > 0;
+    const currentSpaces = isMultipleSpaces ? multipleSpacesData : (initialData ? [initialData] : []);
+    
     useEffect(() => {
-        const formattedData = {
-            ...initialData,
-            reservationCategory: initialData.reservationCategory === null
-                ? ""
-                : typeof initialData.reservationCategory === 'object'
-                    ? initialData.reservationCategory.name
-                    : initialData.reservationCategory
-        };
-        
-        setSpaceData(formattedData);
-        setOriginalData(formattedData);
-    }, [initialData]);
+        if (initialData && !isMultipleSpaces) {
+            const formattedData = {
+                ...initialData,
+                reservationCategory: initialData.reservationCategory === null
+                    ? ""
+                    : typeof initialData.reservationCategory === 'object'
+                        ? initialData.reservationCategory.name
+                        : initialData.reservationCategory
+            };
+            
+            setSpaceData(formattedData);
+            setOriginalData(formattedData);
+        }
+    }, [initialData, isMultipleSpaces]);
 
     const buttonStyle = {
         backgroundColor: '#000842',
@@ -208,6 +214,85 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
         setUpdateError("");
     };
 
+    // Función para renderizar la información de un espacio individual
+    const renderSpaceDetails = (space, index = null) => (
+        <div key={space.id} className={index !== null && index > 0 ? 'mt-4 pt-4 border-top' : ''}>
+            {isMultipleSpaces && (
+                <h6 className="mb-3 text-center text-primary">
+                    Espacio {index + 1}: {space.name}
+                </h6>
+            )}
+            <div className="row">
+                <div className="col-md-6">
+                    <table className="table table-sm table-striped table-bordered shadow-sm rounded">
+                        <tbody>
+                            <tr><th scope="row">Planta</th><td>{space.floor}ª</td></tr>
+                            <tr><th scope="row">Capacidad</th><td>{space.capacity} personas</td></tr>
+                            <tr>
+                                <th scope="row">Tipo de espacio</th>
+                                <td>{typeof space.spaceType === 'object' 
+                                        ? space.spaceType?.name 
+                                        : space.spaceType}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Categoría de reserva</th>
+                                <td>
+                                    {
+                                    typeof space.reservationCategory === 'object' && space.reservationCategory !== null
+                                        ? space.reservationCategory.name
+                                        : space.reservationCategory || "Sin categoría"
+                                    }
+                                </td>
+                            </tr>
+                            <tr><th scope="row">Reservable</th><td>{space.isReservable ? "Sí" : "No"}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div className="col-md-6">
+                    <table className="table table-sm table-striped table-bordered shadow-sm rounded">
+                        <tbody>
+                            <tr><th scope="row">Identificador CRE</th><td>{space.creId}</td></tr>
+                            <tr>
+                                <th scope="row">Asignado a</th>
+                                <td>
+                                    {{
+                                    eina: "EINA",
+                                    department: "Departamento",
+                                    person: "Persona"
+                                    }[space.assignmentTarget.type] || space.assignmentTarget.type}
+                                </td>
+                            </tr>
+                            <tr><th scope="row">Uso máximo permitido</th><td>{space.maxUsagePercentage}%</td></tr>
+                            <tr>
+                                <th scope="row">Horario de reservas</th>
+                                <td>
+                                    <div>
+                                        <strong>Laborables:</strong>{" "}
+                                        {space.customSchedule?.weekdays.open && space.customSchedule?.weekdays.close
+                                            ? `${space.customSchedule.weekdays.open} - ${space.customSchedule.weekdays.close}`
+                                            : "Cerrado"}
+                                    </div>
+                                    <div>
+                                        <strong>Sábados:</strong>{" "}
+                                        {space.customSchedule?.saturday.open && space.customSchedule?.saturday.close
+                                            ? `${space.customSchedule.saturday.open} - ${space.customSchedule.saturday.close}`
+                                            : "Cerrado"}
+                                    </div>
+                                    <div>
+                                        <strong>Domingos:</strong>{" "}
+                                        {space.customSchedule?.sunday.open && space.customSchedule?.sunday.close
+                                            ? `${space.customSchedule.sunday.open} - ${space.customSchedule.sunday.close}`
+                                            : "Cerrado"}
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <Modal
             show={show}
@@ -218,6 +303,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
             centered
             dialogClassName="custom-modal"
             backdrop="static"
+            size={isMultipleSpaces ? "xl" : "lg"}
         >
             {/* Título variable del pop up */}
             <Modal.Header className="position-relative">
@@ -236,13 +322,17 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                 {editMode
                     ? `Modificar información variable del ${spaceData.name}`
                     : isReserving
-                    ? `Reservar ${spaceData.name}`
-                    : spaceData.name}
+                    ? isMultipleSpaces 
+                        ? `Reservar ${currentSpaces.length} espacios`
+                        : `Reservar ${spaceData?.name || ''}`
+                    : isMultipleSpaces
+                    ? `Información de ${currentSpaces.length} espacios`
+                    : spaceData?.name || ''}
                 </Modal.Title>
             </Modal.Header>
 
             {/* Contenido variable del pop up */}
-            <Modal.Body className="custom-modal-body">
+            <Modal.Body className="custom-modal-body" style={isMultipleSpaces ? { maxHeight: '60vh', overflowY: 'auto' } : {}}>
                 {/* Mostrar alerta de error si existe */}
                 {updateError && (
                     <Alert variant="danger" className="mb-3">
@@ -251,7 +341,10 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                 )}
                 
                 {editMode ? (
-                    // Contenido si se esta editando los datos del espacio
+                    // ===================================================================================
+                    // MODO PARA CAMBIAR INFORMACIÓN DE LOS ESPACIOS
+                    // Contenido si se esta editando los datos del espacio (solo para espacio individual)
+                    // ===================================================================================
                     <Form>
                         {/* Campo para la categoría de reserva */}
                         <Form.Group className="mb-2">
@@ -441,7 +534,10 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                         </Form.Group>
                     </Form>
                 ): isReserving ? (
+                    // ===================================================================================
+                    // MODO SE ESTÁ REALIZANDO UNA RESERVA
                     // Contenido si se esta realizando la reserva
+                    // ===================================================================================
                     <Form>
                       {/* Campo para indicar el tipo de uso*/}
                       <Form.Group className="mb-2">
@@ -484,95 +580,17 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                           ⚠ {reservationError}
                         </div>
                       )}
-                  
-                      {/* Botón para añadir nuevos espacios a la reserva */}
-                      <div className="d-flex justify-content-center">
-                        <Button
-                          variant="outline-light"
-                          style={{
-                            backgroundColor: "#000842",
-                            color: "white",
-                            borderRadius: "10px",
-                            padding: "6px 12px",
-                          }}
-                          onClick={() =>{}}
-                        >
-                          + Añadir otro espacio a la reserva
-                        </Button>
-                      </div>
                     </Form>
                   ) : (
-                    // En el caso de que no se este editando se muestra la info del espacio
+                    // ===================================================================================
+                    // MODO PRINCIPAL EN EL QUE SE MUESTRA LA INFORMACIÓN
+                    // En el caso de que no se este editando se muestra la info del espacio(s)
+                    // ===================================================================================
                     <div>
-                        <h5 className="mb-4 text-center">Detalles del espacio</h5>
-                        <div className="row">
-                            <div className="col-md-6">
-                                <table className="table table-sm table-striped table-bordered shadow-sm rounded">
-                                    <tbody>
-                                        <tr><th scope="row">Planta</th><td>{spaceData.floor}ª</td></tr>
-                                        <tr><th scope="row">Capacidad</th><td>{spaceData.capacity} personas</td></tr>
-                                        <tr>
-                                            <th scope="row">Tipo de espacio</th>
-                                            <td>{typeof spaceData.spaceType === 'object' 
-                                                    ? spaceData.spaceType?.name 
-                                                    : spaceData.spaceType}</td>
-                                        </tr>
-                                        <tr>
-                                            <th scope="row">Categoría de reserva</th>
-                                            <td>
-                                                {
-                                                typeof spaceData.reservationCategory === 'object' && spaceData.reservationCategory !== null
-                                                    ? spaceData.reservationCategory.name
-                                                    : spaceData.reservationCategory || "Sin categoría"
-                                                }
-                                            </td>
-                                        </tr>
-                                        <tr><th scope="row">Reservable</th><td>{spaceData.isReservable ? "Sí" : "No"}</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="col-md-6">
-                                <table className="table table-sm table-striped table-bordered shadow-sm rounded">
-                                    <tbody>
-                                        <tr><th scope="row">Identificador CRE</th><td>{spaceData.creId}</td></tr>
-                                        <tr>
-                                            <th scope="row">Asignado a</th>
-                                            <td>
-                                                {{
-                                                eina: "EINA",
-                                                department: "Departamento",
-                                                person: "Persona"
-                                                }[spaceData.assignmentTarget.type] || spaceData.assignmentTarget.type}
-                                            </td>
-                                        </tr>
-                                        <tr><th scope="row">Uso máximo permitido</th><td>{spaceData.maxUsagePercentage}%</td></tr>
-                                        <tr>
-                                            <th scope="row">Horario de reservas</th>
-                                            <td>
-                                                <div>
-                                                    <strong>Laborables:</strong>{" "}
-                                                    {spaceData.customSchedule?.weekdays.open && spaceData.customSchedule?.weekdays.close
-                                                        ? `${spaceData.customSchedule.weekdays.open} - ${spaceData.customSchedule.weekdays.close}`
-                                                        : "Cerrado"}
-                                                </div>
-                                                <div>
-                                                    <strong>Sábados:</strong>{" "}
-                                                    {spaceData.customSchedule?.saturday.open && spaceData.customSchedule?.saturday.close
-                                                        ? `${spaceData.customSchedule.saturday.open} - ${spaceData.customSchedule.saturday.close}`
-                                                        : "Cerrado"}
-                                                </div>
-                                                <div>
-                                                    <strong>Domingos:</strong>{" "}
-                                                    {spaceData.customSchedule?.sunday.open && spaceData.customSchedule?.sunday.close
-                                                        ? `${spaceData.customSchedule.sunday.open} - ${spaceData.customSchedule.sunday.close}`
-                                                        : "Cerrado"}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <h5 className="mb-4 text-center">
+                            {isMultipleSpaces ? 'Detalles de los espacios' : 'Detalles del espacio'}
+                        </h5>
+                        {currentSpaces.map((space, index) => renderSpaceDetails(space, isMultipleSpaces ? index : null))}
                     </div>
                 )}
             </Modal.Body>
@@ -593,7 +611,8 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                             Reservar
                         </Button>
 
-                        {userRole === "gerente" && (
+                        {/* Solo mostrar botón de modificar para espacios individuales */}
+                        {userRole === "gerente" && !isMultipleSpaces && (
                             <Button
                                 variant="outline-light"
                                 onClick={() => setEditMode(true)}
@@ -606,7 +625,7 @@ const CustomPopup = ({ show, onHide, initialData, onUpdate }) => {
                     </>
                 )}
 
-                {editMode && userRole === "gerente" && (
+                {editMode && userRole === "gerente" && !isMultipleSpaces && (
                     <Button
                         variant="outline-light"
                         onClick={handleModify}
