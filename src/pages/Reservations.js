@@ -18,7 +18,7 @@ const Reservations = () => {
     const [showMyReservations, setShowMyReservations] = useState(true);
     const [showActiveReservations, setShowActiveReservations] = useState(false);
 
-    const reservationsPerPage = 5;
+    const reservationsPerPage = 10;
 
     //  DATOS PARA PRUEBAS, LUEGO ESTO SE SACA DE LA API ****************************
     const data = [
@@ -282,8 +282,8 @@ const Reservations = () => {
                     </Row>
                 </div>
                 <div className="pt-4 pb-2">
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                        {userRole === 'gerente' && (
+                    {userRole === 'gerente' ? (
+                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
                             <div className="d-flex justify-content-center justify-content-md-start gap-2" style={{ width: "370px" }}>
                                 <Button
                                     onClick={showOnlyActiveReservations}
@@ -300,13 +300,11 @@ const Reservations = () => {
                                     Ver reservas activas
                                 </Button>
                             </div>
-                        )}
 
                         <div className="d-flex justify-content-center">
                             <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         </div>
 
-                        {userRole === 'gerente' && (
                             <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
                                 <Button
                                     onClick={toggleMyReservations}
@@ -323,8 +321,12 @@ const Reservations = () => {
                                     {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
                                 </Button>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <div className="d-flex justify-content-center">
+                            <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
+                        </div>
+                    )}
                 </div>
             </Container>
             <CustomModal
