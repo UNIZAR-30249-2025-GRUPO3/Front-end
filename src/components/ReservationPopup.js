@@ -8,7 +8,7 @@ const API_URL = 'https://back-end-sv3z.onrender.com';
 
 const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }) => {
 
-    const { userRole, isAuthenticated, authToken, isTokenExpired } = useAuth();
+    const { userRole, isAuthenticated, authToken, isTokenExpired, userId } = useAuth();
 
     const [editMode, setEditMode] = useState(false);
     const [isReserving, setIsReserving] = useState(false);
@@ -18,7 +18,10 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
     const [updateError, setUpdateError] = useState("");
     const [validationErrors, setValidationErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
-    
+    const [reservationData, setReservationData] = useState({tipoUso: "docencia",maxAsistentes: 1,fechaInicio: "",duracion: 60, detalles: "" });
+    const [isSubmittingReservation, setIsSubmittingReservation] = useState(false);
+    const [reservationSuccess, setReservationSuccess] = useState(false);
+
     // Se determina si estamos en modo múltiples espacios
     const isMultipleSpaces = multipleSpacesData && multipleSpacesData.length > 0;
     const currentSpaces = isMultipleSpaces ? multipleSpacesData : (initialData ? [initialData] : []);
@@ -198,13 +201,65 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
         }
     };
 
-    const handleReservationSubmit = () => {
-        // Harcodeado un error de validación
-        setReservationError("Debe seleccionar una fecha y hora válida.");
+    const prepareReservationData = () => {
+        const reservation = {};
+       
+        reservation.userId = userId;
+        if(isMultipleSpaces){
+            reservation.spaceIds = multipleSpacesData.map(space => space.id);
+        }else{
+            reservation.spaceIds = [initialData.id];
+        }
+        reservation.usageType = reservationData.tipoUso;
+        reservation.maxAttendees = reservationData.maxAsistentes;
+        reservation.startTime = reservationData.fechaInicio;
+        reservation.duration = reservationData.duracion;
+        reservation.additionalDetails = reservationData.detalles;
         
-        // Caso en el que no hay error (demomento comentado)
-        // setIsReserving(false);
-        // onHide();
+        return reservation;
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setReservationData((prevData) => ({
+            ...prevData,
+            [name]: value
+        }));
+    };
+
+
+    const handleReservationSubmit = async() => {
+        setIsSubmittingReservation(true);
+        setReservationError("");
+        setReservationSuccess(false);
+        const ReservData = prepareReservationData();
+        try {
+            const response = await axios.post(
+                `${API_URL}/api/reservations`,ReservData,{
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                }
+            );
+            console.log("Reserva creada exitosamente:", response.data);
+            setReservationSuccess(true);
+            // Caso en el que no hay error
+            setTimeout(() => {
+                setIsReserving(false);
+                setReservationSuccess(false);
+                onHide();
+            }, 1000);
+        } catch (error) {
+            const mensajeBackend = error.response?.data?.error;
+            if (mensajeBackend) {
+                setReservationError(`${mensajeBackend}`);
+            } else {
+                setReservationError(`Error al crear la reserva: ${error.message}`);
+            }
+        } finally {
+        setIsSubmittingReservation(false);
+    }
     };
 
     const resetPopupState = () => {
@@ -213,6 +268,8 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
         setReservationError("");
         setUpdateError("");
     };
+
+
 
     // Función para renderizar la información de un espacio individual
     const renderSpaceDetails = (space, index = null) => (
@@ -338,8 +395,7 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
                     <Alert variant="danger" className="mb-3">
                         {updateError}
                     </Alert>
-                )}
-                
+                )}                
                 {editMode ? (
                     // ===================================================================================
                     // MODO PARA CAMBIAR INFORMACIÓN DE LOS ESPACIOS
@@ -540,39 +596,65 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
                     // ===================================================================================
                     <Form>
                       {/* Campo para indicar el tipo de uso*/}
-                      <Form.Group className="mb-2">
-                        <Form.Label>Tipo de uso</Form.Label>
-                        <Form.Select>
-                          <option value="docencia">Docencia</option>
-                          <option value="investigacion">Investigación</option>
-                          <option value="gestion">Gestión</option>
-                          <option value="otro">Otro</option>
-                        </Form.Select>
-                      </Form.Group>
+                        <Form.Group className="mb-2">
+                            <Form.Label>Tipo de uso</Form.Label>
+                            <Form.Select
+                            name="tipoUso"
+                            value={reservationData.tipoUso}
+                            onChange={handleChange}
+                            >
+                            <option value="docencia">Docencia</option>
+                            <option value="investigacion">Investigación</option>
+                            <option value="gestion">Gestión</option>
+                            <option value="otro">Otro</option>
+                            </Form.Select>
+                        </Form.Group>
                   
                       {/* Campo para indicar el número máximo de asistentes */}
-                      <Form.Group className="mb-2">
-                        <Form.Label>Número máximo de asistentes</Form.Label>
-                        <Form.Control type="number" min="1" />
-                      </Form.Group>
+                        <Form.Group className="mb-2">
+                            <Form.Label>Número máximo de asistentes</Form.Label>
+                            <Form.Control
+                            type="number"
+                            name="maxAsistentes"
+                            min="1"
+                            value={reservationData.maxAsistentes}
+                            onChange={handleChange}
+                            />
+                        </Form.Group>
                   
                       {/* Campo para indicar la fecha de inicio */}
-                      <Form.Group className="mb-2">
-                        <Form.Label>Fecha y hora de inicio</Form.Label>
-                        <Form.Control type="datetime-local" />
-                      </Form.Group>
+                       <Form.Group className="mb-2">
+                            <Form.Label>Fecha y hora de inicio</Form.Label>
+                            <Form.Control
+                            type="datetime-local"
+                            name="fechaInicio"
+                            value={reservationData.fechaInicio}
+                            onChange={handleChange}
+                            />
+                        </Form.Group>
                   
                       {/* Campo para indicar la duración de la reserva */}
-                      <Form.Group className="mb-2">
-                        <Form.Label>Duración (en minutos)</Form.Label>
-                        <Form.Control type="number" min="1" />
-                      </Form.Group>
-                  
+                        <Form.Group className="mb-2">
+                            <Form.Label>Duración (en minutos)</Form.Label>
+                            <Form.Control
+                            type="number"
+                            name="duracion"
+                            min="1"
+                            value={reservationData.duracion}
+                            onChange={handleChange}
+                            />
+                        </Form.Group>
                       {/* Campo para indicar detalles adicionales */}
-                      <Form.Group className="mb-2">
-                        <Form.Label>Detalles adicionales</Form.Label>
-                        <Form.Control as="textarea" rows={2} />
-                      </Form.Group>
+                        <Form.Group className="mb-2">
+                            <Form.Label>Detalles adicionales</Form.Label>
+                            <Form.Control
+                            as="textarea"
+                            rows={2}
+                            name="detalles"
+                            value={reservationData.detalles}
+                            onChange={handleChange}
+                            />
+                        </Form.Group>
 
                       {/* Mensaje en caso de error */}
                       {reservationError && (
@@ -610,7 +692,7 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
                         >
                             Reservar
                         </Button>
-
+    
                         {/* Solo mostrar botón de modificar para espacios individuales */}
                         {userRole === "gerente" && !isMultipleSpaces && (
                             <Button
@@ -645,6 +727,19 @@ const CustomPopup = ({ show, onHide, initialData, multipleSpacesData, onUpdate }
                     >
                         Finalizar reserva
                     </Button>
+                )}
+                {isSubmittingReservation && (
+                        <div className="text-center my-3">
+                            <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Creando reserva...</span>
+                            </div>
+                            <p className="mt-2"><strong>Creando reserva...</strong></p>
+                        </div>
+                )}
+                {reservationSuccess && (
+                        <Alert variant="success" className="text-center">
+                            Reserva creada correctamente.
+                        </Alert>
                 )}
             </Modal.Footer>
         </Modal>

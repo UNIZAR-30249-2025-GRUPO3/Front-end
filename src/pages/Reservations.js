@@ -16,7 +16,7 @@ const Reservations = () => {
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { userRole, userId } = useAuth();
+    const {userRole, userId} = useAuth();
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
@@ -265,12 +265,36 @@ const Reservations = () => {
     const currentReservatios = displayedData.slice(indexOfFirstReservatio, indexOfLastReservatio);
     if (loading) {
         return (
-            <>
-                <CustomNavbar />
-                <Container className="mt-5">
-                    <h4>Cargando...</h4>
-                </Container>
-            </>
+        <div
+            className="reservation-overlay"
+            style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000842',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050
+            }}>
+            <div
+            className="reservation-spinner text-center"
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+            }}>
+            <div
+                className="spinner-border text-light"
+                role="status"
+                style={{ width: '4rem', height: '4rem' }}>
+                <span className="visually-hidden">Cargando reservas...</span>
+            </div>
+            <p className="mt-3 fs-4 text-light">Cargando reservas...</p>
+            </div>
+        </div>
         );
     }
 
@@ -340,9 +364,9 @@ const Reservations = () => {
                                         )}
                                         <div className="me-4 mb-2"><strong>Tipo de Uso:</strong> {user.usageType}</div>
                                         <div className="me-4 mb-2"><strong>Asistentes Máx.:</strong> {user.maxAttendees}</div>
-                                        <div className="me-4 mb-2"><strong>Inicio:</strong> {user.startTime?.toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                                        <div className="me-4 mb-2"><strong>Inicio:</strong> {user.startTime?.toISOString().replace('T', ' ').slice(0, 16)}</div>
                                         <div className="me-4 mb-2"><strong>Duración:</strong> {user.duration} min</div>
-                                        <div className="me-4 mb-2"><strong>Fin:</strong>{user.endTime?.toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                                        <div className="me-4 mb-2"><strong>Fin:</strong> {user.endTime?.toISOString().replace('T', ' ').slice(0, 16)}</div>
                                         </div>
                                     </div>
                                     <div className="d-flex align-items-center ms-3">
