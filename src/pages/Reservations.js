@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FiCalendar, FiTrash2, FiCheck } from 'react-icons/fi';
 import { useAuth } from '../authContext';
@@ -150,7 +150,11 @@ const Reservations = () => {
         }
     };
 
+    const loaded = useRef(false);
+
     useEffect(() => {
+        if (loaded.current) return;
+        loaded.current = true;
         const loadInitialData = async () => {
             setLoading(true);
             try {
