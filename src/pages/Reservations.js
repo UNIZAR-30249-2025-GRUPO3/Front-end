@@ -1,126 +1,188 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { FiCalendar, FiTrash2, FiCheck } from 'react-icons/fi';
+import { useAuth } from '../authContext';
 import CustomNavbar from '../components/CustomNavbar';
 import CustomModal from '../components/CustomModal';
 import Pagination from "../components/CustomPagination";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
+
+
+
+const API_URL = 'https://back-end-sv3z.onrender.com';
 
 const Reservations = () => {
+    const [reservations, setReservations] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const {userRole, userId} = useAuth();
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showMyReservations, setShowMyReservations] = useState(true);
+    const [showActiveReservations, setShowActiveReservations] = useState(false);
+    const [data, setData] = useState([]);
 
-    const userRole = sessionStorage.getItem("userRole");
 
-    const reservationsPerPage = 5;
-
-    //  DATOS PARA PRUEBAS, LUEGO ESTO SE SACA DE LA API ****************************
-    const data = [
-        {
-            id: 1,
-            spaceId: "X",
-            userName: "Paco González",
-            category: "aula",
-            usageType: "docencia",
-            maxAttendees: 30,
-            startTime: new Date("2025-04-26T08:00:00"),
-            duration: 90,
-            invalid: false,
-        },
-        {
-            id: 2,
-            spaceId: "X",
-            userName: "Carlos Martínez",
-            category: "seminario",
-            usageType: "investigacion",
-            maxAttendees: 20,
-            startTime: new Date("2025-04-26T10:00:00"),
-            duration: 60,
-            invalid: false,
-        },
-        {
-            id: 3,
-            spaceId: "X",
-            userName: "María Pérez",
-            category: "laboratorio",
-            usageType: "gestion",
-            maxAttendees: 15,
-            startTime: new Date("2025-04-26T11:00:00"),
-            duration: 120,
-            invalid: true,
-        },
-        {
-            id: 4,
-            spaceId: "X",
-            userName: "Luis Rodríguez",
-            category: "sala común",
-            usageType: "otro",
-            maxAttendees: 10,
-            startTime: new Date("2025-04-26T13:00:00"),
-            duration: 45,
-            invalid: false,
-        },
-        {
-            id: 5,
-            userName: "Sofía Ramírez",
-            category: "aula",
-            usageType: "docencia",
-            maxAttendees: 25,
-            startTime: new Date("2025-04-26T14:00:00"),
-            duration: 90,
-        },
-        {
-            id: 6,
-            spaceId: "X",
-            userName: "Paco González",
-            category: "seminario",
-            usageType: "investigacion",
-            maxAttendees: 20,
-            startTime: new Date("2025-04-27T08:00:00"),
-            duration: 60,
-            invalid: false,
-        },
-        {
-            id: 7,
-            spaceId: "X",
-            userName: "Carlos Martínez",
-            category: "laboratorio",
-            usageType: "gestion",
-            maxAttendees: 15,
-            startTime: new Date("2025-04-27T09:00:00"),
-            duration: 120,
-            invalid: true,
-        },
-        {
-            id: 8,
-            spaceId: "X",
-            userName: "María Pérez",
-            category: "sala común",
-            usageType: "otro",
-            maxAttendees: 10,
-            startTime: new Date("2025-04-27T11:00:00"),
-            duration: 45,
-            invalid: true,
-        },
-        {
-            id: 9,
-            spaceId: "X",
-            userName: "Luis Rodríguez",
-            category: "aula",
-            usageType: "docencia",
-            maxAttendees: 25,
-            startTime: new Date("2025-04-27T12:00:00"),
-            duration: 90,
-            invalid: false,
-        },
-    ];
+    const reservationsPerPage = 10;
+    const now = new Date();
 
     data.forEach(reservation => {
         reservation.endTime = new Date(reservation.startTime.getTime() + reservation.duration * 60000);
     });
+
+
+    const activeReservations = data.filter(reservation => reservation.endTime > now);
+    const myReservations = data.filter(reservation => reservation.userId === userId);
+
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/users`);
+            const users = response.data.map(user => ({
+                id: user.id,
+                name: user.name
+            }));
+            return users;
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            return []; 
+        }
+    };
+
+   const fetchSpacesbyID = async (id) => {
+        try {
+            const response = await axios.get(`${API_URL}/api/spaces/${id}`);
+            const space = response.data;
+            return {
+                idSpace: space.idSpace,
+                id: space.id,
+                name: space.name,
+                category: space.reservationCategory?.name || 'Sin categoría',
+            };
+        } catch (error) {
+            console.error('Error fetching space with ID ${id}:', error);
+            return null;
+        }
+    };
+
+    const getUserNameById = (users, userId) => {
+        const user = users.find(u => u.id === userId);
+        return user ? user.name : `Usuario ${userId}`;
+    };
+
+    const getSpaceNameById = async (spaces, spaceId) => {
+        const space = spaces.find(s => s.id === spaceId);
+        return space ? space.name : `${spaceId}`;
+    };
+
+    const getSpaceCategoryById = async (spaces, spaceId) => {
+        const space = spaces.find(s => s.id === spaceId);
+        return space ? space.category : `Sin categoria`;
+    };
+
+    const fetchSpacesforReservations = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/reservations`, {
+                timeout: 5000
+            });
+            const apiData = response.data;
+            const allSpaceIds = apiData.flatMap(res => res.spaceIds);
+            const uniqueSpaceIds = [...new Set(allSpaceIds)];
+
+            return uniqueSpaceIds;
+        } catch (error) {
+            console.error('Error fetching reservations:', error);
+        }
+    };
+
+    const deleteReservation = async (id) => {
+        try {
+            const response = await axios.delete(`${API_URL}/api/reservations/${id}`, { 
+                timeout: 5000
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error deleting reservation:', error);
+            throw error; 
+        }
+    };
+
+
+    const fetchAllReservations = async (users, spaces) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await axios.get(`${API_URL}/api/reservations`, {
+                timeout: 10000 
+            });
+            const apiData = response.data;
+
+            const transformedData = await Promise.all(
+                apiData.map(async (res) => {
+                    const startTime = new Date(res.startTime);
+                    const endTime = new Date(startTime.getTime() + res.duration * 60000);
+                    return {
+                        id: res.id,
+                        spaceId: res.spaceIds ? (await Promise.all(res.spaceIds.map(id => getSpaceNameById(spaces, id)))).join(', ') : '',
+                        userName: getUserNameById(users, res.userId),
+                        userId: res.userId,
+                        category: await getSpaceCategoryById(spaces, res.spaceIds[0]),
+                        usageType: res.usageType,
+                        maxAttendees: res.maxAttendees,
+                        startTime,
+                        endTime,
+                        duration: res.duration,
+                        invalid: res.status === "potentially_invalid",
+                    };
+                })
+            );
+
+            setReservations(transformedData);
+            setData(transformedData);
+        } catch (err) {
+            console.error("Error fetching reservations:", err);
+            setError("No se pudieron cargar las reservas.");
+            setReservations([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loaded = useRef(false);
+
+    useEffect(() => {
+        if (loaded.current) return;
+        loaded.current = true;
+        const loadInitialData = async () => {
+            setLoading(true);
+            try {
+                const users = await fetchUsers();
+                console.log("Usuarios:", users);
+                const spaceids = await fetchSpacesforReservations();
+                console.log("Ids:", spaceids);
+                const spaces = [];
+                for (let i = 0; i < spaceids.length; i++) {
+                    const space = await fetchSpacesbyID(spaceids[i]);
+                    if (space) {
+                        spaces.push(space);
+                    }
+                }
+                console.log("Espacios:", spaces);
+                if (users.length > 0 && spaces.length > 0) {
+                    fetchAllReservations(users, spaces);
+                }
+            } catch (err) {
+                console.error("Error cargando datos iniciales:", err);
+                setError("No se pudieron cargar los datos iniciales.");
+            } finally {
+                setLoading(false); 
+        }
+    };
+        loadInitialData();
+    }, []);
+
 
     const handleCancelClick = (user) => {
         setSelectedReservation(user);
@@ -144,9 +206,53 @@ const Reservations = () => {
 
     const toggleMyReservations = () => {
         setShowMyReservations(!showMyReservations);
+        setShowActiveReservations(false); 
     };
 
-    const totalPages = Math.ceil(data.length / reservationsPerPage);
+    const showOnlyActiveReservations = () => {
+        setShowActiveReservations(!showActiveReservations);
+        setCurrentPage(1);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (selectedReservation) {
+            try {
+                console.log("Id:", selectedReservation.id);
+                await deleteReservation(selectedReservation.id);
+
+                setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
+                setData(prev => prev.filter(r => r.id !== selectedReservation.id));
+                
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                handleCloseCancelModal();
+            }
+        }
+        else{
+            console.log("Reserva no seleccionada");
+        }
+    };
+
+
+
+    const displayedData = data.filter(reservation => {
+        if (showMyReservations) {
+            if (Number(reservation.userId) !== Number(userId)){
+                return false;
+            } 
+        }
+        
+        if (showActiveReservations) {
+            const endTime = new Date(reservation.startTime.getTime() + reservation.duration * 60000);
+            if (endTime <= now) return false;
+        }
+
+        return true;
+    });
+
+
+    const totalPages = Math.ceil(displayedData.length / reservationsPerPage);
 
     const paginate = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -156,7 +262,41 @@ const Reservations = () => {
 
     const indexOfLastReservatio = currentPage * reservationsPerPage;
     const indexOfFirstReservatio = indexOfLastReservatio - reservationsPerPage;
-    const currentReservatios = data.slice(indexOfFirstReservatio, indexOfLastReservatio);
+    const currentReservatios = displayedData.slice(indexOfFirstReservatio, indexOfLastReservatio);
+    if (loading) {
+        return (
+        <div
+            className="reservation-overlay"
+            style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000842',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1050
+            }}>
+            <div
+            className="reservation-spinner text-center"
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+            }}>
+            <div
+                className="spinner-border text-light"
+                role="status"
+                style={{ width: '4rem', height: '4rem' }}>
+                <span className="visually-hidden">Cargando reservas...</span>
+            </div>
+            <p className="mt-3 fs-4 text-light">Cargando reservas...</p>
+            </div>
+        </div>
+        );
+    }
 
     return (
         <div className="App position-relative d-flex flex-column" style={{ height: '100vh' }}>
@@ -173,8 +313,12 @@ const Reservations = () => {
                         <div>
                             <h2 className="mb-1 text-center">
                                 {showMyReservations ? "Mis reservas" : "Todas las reservas"}
+                                {showActiveReservations && " (Activas)"}
                             </h2> 
-                            <p className="text-muted text-start">Tienes {data.length} reservas</p> 
+                            <p className="text-muted text-start">
+                                Tienes {displayedData.length} {displayedData.length === 1 ? 'reserva' : 'reservas'}
+                                {showActiveReservations ? ' activa' + (displayedData.length === 1 ? '' : 's') : ''}
+                            </p>
                         </div>
                     </Col>
                 </Row>
@@ -206,7 +350,7 @@ const Reservations = () => {
                                     <div className="flex-grow-1 d-flex flex-column justify-content-center">
                                         <div className="d-flex flex-wrap mb-2">
                                         <span className="fw-bold fs-5 text-capitalize me-2">
-                                            {user.category} {user.spaceId}
+                                            Categoría de Reserva: {user.category} | Espacios: {user.spaceId}
                                             {user.invalid && (
                                                 <span className="fw-normal fs-6"> - (Reserva potencialmente inválida)</span>
                                             )}
@@ -220,9 +364,9 @@ const Reservations = () => {
                                         )}
                                         <div className="me-4 mb-2"><strong>Tipo de Uso:</strong> {user.usageType}</div>
                                         <div className="me-4 mb-2"><strong>Asistentes Máx.:</strong> {user.maxAttendees}</div>
-                                        <div className="me-4 mb-2"><strong>Inicio:</strong> {user.startTime?.toLocaleString()}</div>
+                                        <div className="me-4 mb-2"><strong>Inicio:</strong> {user.startTime?.toISOString().replace('T', ' ').slice(0, 16)}</div>
                                         <div className="me-4 mb-2"><strong>Duración:</strong> {user.duration} min</div>
-                                        <div className="me-4 mb-2"><strong>Fin:</strong> {user.endTime?.toLocaleString()}</div>
+                                        <div className="me-4 mb-2"><strong>Fin:</strong> {user.endTime?.toISOString().replace('T', ' ').slice(0, 16)}</div>
                                         </div>
                                     </div>
                                     <div className="d-flex align-items-center ms-3">
@@ -262,30 +406,51 @@ const Reservations = () => {
                     </Row>
                 </div>
                 <div className="pt-4 pb-2">
-                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                        <div className="d-none d-md-block" style={{width: "225px"}}></div>
-                        
-                        <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
-                        
-                        <div className="d-flex justify-content-center justify-content-md-end" style={{ width: "225px" }}>
-                            {userRole === 'gerente' && (
+                    {userRole === 'gerente' ? (
+                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                            <div className="d-flex justify-content-center justify-content-md-start gap-2" style={{ width: "370px" }}>
                                 <Button
-                                onClick={toggleMyReservations}
-                                style={{
-                                    borderRadius: "30px",
-                                    backgroundColor: "#000842",
-                                    borderColor: "#000842",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                                    transition: "all 0.3s ease",
-                                    letterSpacing: "0.5px",
-                                    fontSize: "1rem",
-                                }}
+                                    onClick={showOnlyActiveReservations}
+                                    style={{
+                                        borderRadius: "30px",
+                                        backgroundColor: showActiveReservations ? "#0056b3" : "#000842",
+                                        borderColor: showActiveReservations ? "#0056b3" : "#000842",
+                                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                        transition: "all 0.3s ease",
+                                        letterSpacing: "0.5px",
+                                        fontSize: "1rem",
+                                    }}
                                 >
-                                {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
+                                    Ver reservas activas
                                 </Button>
-                            )}
+                            </div>
+
+                        <div className="d-flex justify-content-center">
+                            <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
                         </div>
-                    </div>
+
+                            <div className="d-flex justify-content-center justify-content-md-end gap-2" style={{ width: "370px" }}>
+                                <Button
+                                    onClick={toggleMyReservations}
+                                    style={{
+                                        borderRadius: "30px",
+                                        backgroundColor: "#000842",
+                                        borderColor: "#000842",
+                                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                                        transition: "all 0.3s ease",
+                                        letterSpacing: "0.5px",
+                                        fontSize: "1rem",
+                                    }}
+                                >
+                                    {showMyReservations ? "Ver todas las reservas" : "Ver mis reservas"}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="d-flex justify-content-center">
+                            <Pagination currentPage={currentPage} totalPages={totalPages} paginate={paginate} />
+                        </div>
+                    )}
                 </div>
             </Container>
             <CustomModal
@@ -295,6 +460,7 @@ const Reservations = () => {
                 bodyText={selectedReservation ? `¿Estás seguro que deseas cancelar la reserva del ${selectedReservation.category} ${selectedReservation.spaceId} con fecha de inicio: ${selectedReservation.startTime?.toLocaleString()}?`
                     : "¿Estás seguro que deseas cancelar la reserva?"}
                 confirmButtonText="Cancelar reserva"
+                onConfirm={handleConfirmCancel} 
                 onSave={handleCloseCancelModal}
             />
             <CustomModal

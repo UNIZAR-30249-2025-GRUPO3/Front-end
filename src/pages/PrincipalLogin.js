@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import "bootstrap/dist/css/bootstrap.min.css";
-import { Container, Form, Button, Card } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import logoUnizar from "../assets/logoUnizar.png";
 import { useAuth } from '../authContext';
+import logoUnizar from "../assets/logoUnizar.png";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function PrincipalLogin() {
 
@@ -11,40 +11,79 @@ function PrincipalLogin() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [validated, setValidated] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login } = useAuth();
-
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/explorar');
+    }
+  }, [isAuthenticated, navigate]);
 
-  // HABRÁ QUE AÑADIR NUEVAS VERIFICACIONES CON LA API *********
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-
+  const validateForm = () => {
     const newErrors = {};
+    
     if (!email) {
       newErrors.email = 'Email es requerido';
-    }
-    else if (!/\S+@\S+/.test(email)) {
+    } else if (!/\S+@\S+/.test(email)) {
       newErrors.email = 'Email no válido';
     }
 
     if (!password) {
       newErrors.password = 'Contraseña es requerida';
-    }
-    else if (password.length < 8) {
+    } else if (password.length < 8) {
       newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (form.checkValidity() && Object.keys(newErrors).length === 0) {
-      // FALTA LÓGICA DE AUTENTICACIÓN DEL BACKEND
-      await login(); // activar sesión
-      navigate("/explorar"); // Redirigir a la página principal de explorar
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    
+    // Se valida el formulario
+    if (!validateForm()) {
+      setValidated(true);
+      return;
     }
 
-    setValidated(true);
+    try {
+      setIsSubmitting(true);
+      setLoginError('');
+      
+      // Se llama a la función de login del AuthContext
+      const result = await login(email, password);
+      
+      if (result.success) {
+        navigate("/explorar"); // Se redirige a la página principal de explorar
+      } else {
+
+        // Manejo de errores específicos
+        const errorMsg = result.error;
+        
+        if (errorMsg.includes('Usuario no encontrado')) {
+          setLoginError('Este email no está registrado en el sistema');
+        } else if (errorMsg.includes('Contraseña incorrecta')) {
+          setLoginError('Contraseña incorrecta. Inténtalo de nuevo');
+        } else if (errorMsg.includes('No tienes sesión activa')) {
+          setLoginError('La sesión ha caducado. Por favor, inicia sesión nuevamente');
+        } else if (errorMsg.includes('Token inválido o expirado')) {
+          setLoginError('Tu sesión ha expirado. Por favor, inicia sesión nuevamente');
+        } else {
+          setLoginError(errorMsg || 'Error al iniciar sesión. Verifica tus credenciales.');
+        }
+      }
+    } catch (error) {
+      console.error('Error en el proceso de login:', error);
+      setLoginError('Error al conectar con el servidor. Inténtalo de nuevo más tarde.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,6 +118,7 @@ function PrincipalLogin() {
                 isInvalid={!!errors.email}
                 isValid={validated && !errors.email}
                 required
+                disabled={isSubmitting}
               />
               <Form.Control.Feedback type="invalid">
                 {errors.email}
@@ -96,11 +136,21 @@ function PrincipalLogin() {
                 isValid={validated && !errors.password}
                 required
                 minLength={8}
+                disabled={isSubmitting}
               />
               <Form.Control.Feedback type="invalid">
                 {errors.password}
               </Form.Control.Feedback>
             </Form.Group>
+
+            {/* Mensaje de error */}
+            {loginError && (
+              <Alert variant="danger" className="mb-4">
+                <div className="d-flex align-items-center">
+                  <strong>Error:</strong>&nbsp;{loginError}
+                </div>
+              </Alert>
+            )}
 
             {/* Botón para inicio de sesión con email */}
             <Button
@@ -117,8 +167,23 @@ function PrincipalLogin() {
                 letterSpacing: "0.5px",
                 fontSize: "1rem",
               }}
+              disabled={isSubmitting}
             >
-              Iniciar sesión
+              {isSubmitting ? (
+                <>
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                    className="me-2"
+                  />
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar sesión'
+              )}
             </Button>
           </Form>
         </Card>
