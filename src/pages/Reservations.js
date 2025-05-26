@@ -109,6 +109,18 @@ const Reservations = () => {
         }
     };
 
+    const validateReservation = async (id) => {
+        try {
+            const response = await axios.put(`${API_URL}/api/reservations/${id}`, { 
+                timeout: 5000
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error validating reservation:', error);
+            throw error; 
+        }
+    };
+
 
     const fetchAllReservations = async (users, spaces) => {
         setLoading(true);
@@ -222,6 +234,33 @@ const Reservations = () => {
 
                 setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
                 setData(prev => prev.filter(r => r.id !== selectedReservation.id));
+                
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                handleCloseCancelModal();
+            }
+        }
+        else{
+            console.log("Reserva no seleccionada");
+        }
+    };
+
+    const handleConfirmNormalice = async () => {
+        if (selectedReservation) {
+            try {
+                console.log("Id:", selectedReservation.id);
+                await validateReservation(selectedReservation.id);
+
+                const updatedReservation = { ...selectedReservation, status: "valid", invalid: false };
+
+                setReservations(prev =>
+                prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+                );
+
+                setData(prev =>
+                prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+                );
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -470,6 +509,7 @@ const Reservations = () => {
                 bodyText={selectedReservation ? `¿Quieres volver a la normalidad la reserva del ${selectedReservation.category} ${selectedReservation.spaceId} con fecha de inicio: ${selectedReservation.startTime?.toLocaleString()}?`
                     : "¿Quieres volver a la normalidad esta reserva?"}
                 confirmButtonText="Normalizar reserva"
+                onConfirm={handleConfirmNormalice} 
                 onSave={handleCloseApproveModal}
             />
         </div>
