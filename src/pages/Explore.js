@@ -70,6 +70,18 @@ const Explore = () => {
         return true;
     };
 
+    // Función para calcular la capacidad efectiva considerando el porcentaje de ocupación máxima
+    const getEffectiveCapacity = (feature) => {
+        const capacity = feature.properties.capacity || 0;
+        const maxUsagePercentage = feature.properties.max_usage_percentage;
+        
+        if (maxUsagePercentage === undefined || maxUsagePercentage === null) {
+            return capacity;
+        }
+        
+        return Math.floor(capacity * (maxUsagePercentage / 100));
+    };
+
     const fetchSpaces = async (customFilters = filters) => {
         setIsLoading(true);
         setError(null);
@@ -89,11 +101,13 @@ const Explore = () => {
             const data = await response.json();
             let filteredData = data.features;
     
-            // Filtro por ocupantes (capacidad mínima)
+            // Filtro por ocupantes (capacidad efectiva mínima)
             if (customFilters.ocupantes && !isNaN(parseInt(customFilters.ocupantes))) {
-                filteredData = filteredData.filter(feature =>
-                    feature.properties.capacity >= parseInt(customFilters.ocupantes)
-                );
+                const requiredCapacity = parseInt(customFilters.ocupantes);
+                filteredData = filteredData.filter(feature => {
+                    const effectiveCapacity = getEffectiveCapacity(feature);
+                    return effectiveCapacity >= requiredCapacity;
+                });
             }
     
             // Filtro por identificador (nombre)
