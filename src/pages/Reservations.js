@@ -13,9 +13,7 @@ import axios from 'axios';
 const API_URL = 'https://back-end-sv3z.onrender.com';
 
 const Reservations = () => {
-    const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const {userRole, userId} = useAuth();
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -32,10 +30,6 @@ const Reservations = () => {
     data.forEach(reservation => {
         reservation.endTime = new Date(reservation.startTime.getTime() + reservation.duration * 60000);
     });
-
-
-    const activeReservations = data.filter(reservation => reservation.endTime > now);
-    const myReservations = data.filter(reservation => reservation.userId === userId);
 
     const fetchUsers = async () => {
         try {
@@ -62,7 +56,7 @@ const Reservations = () => {
                 category: space.reservationCategory?.name || 'Sin categoría',
             };
         } catch (error) {
-            console.error('Error fetching space with ID ${id}:', error);
+            console.error(`Error fetching space with ID ${id}:`, error);
             return null;
         }
     };
@@ -124,7 +118,6 @@ const Reservations = () => {
 
     const fetchAllReservations = async (users, spaces) => {
         setLoading(true);
-        setError(null);
         try {
             const response = await axios.get(`${API_URL}/api/reservations`, {
                 timeout: 10000 
@@ -151,12 +144,9 @@ const Reservations = () => {
                 })
             );
 
-            setReservations(transformedData);
             setData(transformedData);
         } catch (err) {
             console.error("Error fetching reservations:", err);
-            setError("No se pudieron cargar las reservas.");
-            setReservations([]);
         } finally {
             setLoading(false);
         }
@@ -187,13 +177,12 @@ const Reservations = () => {
                 }
             } catch (err) {
                 console.error("Error cargando datos iniciales:", err);
-                setError("No se pudieron cargar los datos iniciales.");
             } finally {
                 setLoading(false); 
         }
     };
         loadInitialData();
-    }, []);
+    },);
 
 
     const handleCancelClick = (user) => {
@@ -232,7 +221,6 @@ const Reservations = () => {
                 console.log("Id:", selectedReservation.id);
                 await deleteReservation(selectedReservation.id);
 
-                setReservations(prev => prev.filter(r => r.id !== selectedReservation.id));
                 setData(prev => prev.filter(r => r.id !== selectedReservation.id));
                 
             } catch (error) {
@@ -254,9 +242,6 @@ const Reservations = () => {
 
                 const updatedReservation = { ...selectedReservation, status: "valid", invalid: false };
 
-                setReservations(prev =>
-                prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
-                );
 
                 setData(prev =>
                 prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
