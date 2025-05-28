@@ -160,8 +160,12 @@ const Reservations = () => {
         const loadInitialData = async () => {
             setLoading(true);
             try {
-                const users = await fetchUsers();
-                console.log("Usuarios:", users);
+                let users = [];
+                if(userRole === 'gerente'){
+                    const users = await fetchUsers();
+                    console.log("Usuarios:", users);
+                }
+                
                 const spaceids = await fetchSpacesforReservations();
                 console.log("Ids:", spaceids);
                 const spaces = [];
@@ -172,7 +176,7 @@ const Reservations = () => {
                     }
                 }
                 console.log("Espacios:", spaces);
-                if (users.length > 0 && spaces.length > 0) {
+                if (spaces.length > 0) {
                     fetchAllReservations(users, spaces);
                 }
             } catch (err) {
